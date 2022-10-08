@@ -1,0 +1,6 @@
+[book]
+authors = ["manishsingh10895"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Learning rust by building a unnecessarily complex Todo CLI"
