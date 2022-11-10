@@ -9,9 +9,11 @@ The source code for the titular `TODO CLI` can be found [here](https://github.co
 
 
 ## Reading the book 
-The book is still a **WORK IN PROGRESS**, so i didn't host it somewhere yet. 
+The book is still a **WORK IN PROGRESS** 
 
- Though you can manually build and serve it locally.
+and currently hosted on github pages [here](https://manishsingh10895.github.io/todo-cli-book) 
+
+Though you can manually build and serve it locally.
 
 It is built using [`mdbook`](https://rust-lang.github.io/mdBook/)
 
