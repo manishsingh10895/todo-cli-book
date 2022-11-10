@@ -1,0 +1,375 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Building Todo API - Learning rust by building an unnecessarily complex Todo CLI</title>
+        
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+        <link rel="stylesheet" href="./mdbook-admonish.css">
+        
+
+        
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div id="sidebar-scrollbox" class="sidebar-scrollbox">
+                <ol class="chapter"><li class="expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="expanded "><a href="initialize.html"><strong aria-hidden="true">2.</strong> Initializing the project</a></li><li class="expanded "><a href="database.html"><strong aria-hidden="true">3.</strong> Building database models</a></li><li><ol class="section"><li class="expanded "><a href="models.html"><strong aria-hidden="true">3.1.</strong> Models as structs</a></li><li class="expanded "><a href="database-connection.html"><strong aria-hidden="true">3.2.</strong> Creating a connection to our database</a></li></ol></li><li class="expanded "><a href="init_api.html" class="active"><strong aria-hidden="true">4.</strong> Building Todo API</a></li><li><ol class="section"><li class="expanded "><a href="api-errors.html"><strong aria-hidden="true">4.1.</strong> API Errors</a></li><li class="expanded "><a href="api-auth.html"><strong aria-hidden="true">4.2.</strong> Authentication Handlers</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Learning rust by building an unnecessarily complex Todo CLI</h1>
+
+                        <div class="right-buttons">
+                            <a href="print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1><a class="header" href="#building-todo-api" id="building-todo-api">Building Todo API</a></h1>
+<p>Now to the most exiting part of any web application, building the REST Apis <code>/s</code>.</p>
+<p>We will be using <a href="https://actix_web.rs">actix_web</a> for our apis. Currently there
+are several alternatives to <code>actix</code> for building apis and there's no particular 
+reason I chose it, other that I found a decent tutorial for it first 😬.</p>
+<h3><a class="header" href="#adding-required-dependencies" id="adding-required-dependencies">Adding required dependencies</a></h3>
+<p>Add the following to <code>[dependencies]</code> section in Cargo.toml</p>
+<pre><code class="language-toml">actix-web = &quot;4.0&quot; # For web server and Apis 
+jsonwebtoken = &quot;8&quot; #For securing routes 
+reqwest = { version = &quot;0.11.11&quot;, features = [&quot;json&quot;, &quot;blocking&quot;] } # for making api calls in rust
+rust-argon2 = &quot;1.0&quot; # Hashing users' passwords
+lazy_static = &quot;1.4&quot; # Explained later
+</code></pre>
+<h3><a class="header" href="#starting-a-server" id="starting-a-server">Starting a server</a></h3>
+<p><code>actix_web</code> works asynchronously, which means it requires an <code>async</code> runtime, as 
+rust doesn't have one inherently. <code>actix_web</code> uses the runtime provided by
+<a href="https://tokio.rs/">tokio</a>. For our rust code to work asynchronously, we need to 
+setup an async runtime, <code>actix_web</code> provides us with an <code>attribute macro</code>, <code>[main]</code>
+which sets it up, with a single line. Macros are just too powerful.</p>
+<p>In <code>src/api/mod.rs</code> write the following code</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use actix_web::{self, web, App, HttpServer};
+use diesel::r2d2::ConnectionManager;
+use r2d2::Pool;
+
+#[actix_web::main] //Sets up async runtime 
+pub async fn start_server() -&gt; std::io::Result&lt;()&gt; {
+    dotenv::dotenv().ok(); // Check and read from .env file
+
+    std::env::set_var(
+        &quot;RUST_LOG&quot;,
+        &quot;simeple-authe_server=debug,actix_web=info,actix_server=info&quot;,
+    ); // Enable logging for actix_web server
+    env_logger::init();
+
+    let database_url = std::env::var(&quot;DATABASE_URL&quot;).expect(&quot;DATABASE_URL must be set&quot;);
+
+    let api_url = std::env::var(&quot;API_URL&quot;).unwrap_or(String::from(&quot;localhost:9000&quot;));
+
+    let manager = ConnectionManager::&lt;diesel::PgConnection&gt;::new(database_url);
+
+    let pool: models::Pool = Pool::builder()
+        .build(manager)
+        .expect(&quot;Failed to connection to PG database&quot;);
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Till here we are reading <code>DATABASE_URL</code> and <code>API_URL</code> from our <code>.env</code> file. </p>
+<p>Then creating a new <code>diesel</code> connection manager and building an <code>r2d2</code> pool to 
+using it to manage database connections. </p>
+<h2><a class="header" href="#creating-a-server" id="creating-a-server">Creating a server</a></h2>
+<p>With that out of the way here's the actual server</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>// src/api/mod.rs
+pub async fn start_server() -&gt; std::io::Result&lt;()&gt; {
+    //...
+    HttpServer::new(move || {
+        App::new().app_data(web::Data::new(pool.clone())).service(
+            web::scope(&quot;/api&quot;)
+                .route(&quot;/hello&quot;, web::get().to(|| async {&quot;Hello World!&quot;}))
+        )
+    })
+    .workers(1) // Num of threads
+    .bind(api_url.as_str())? // binds to `api_url` address (localhost:9000)
+    .run()
+    .await
+ }
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>HttpServer::new()</code> takes a <code>closure</code> and creates a new server.
+<code>move</code> keyword is required to capture data from outside the closure. <a href="https://doc.rust-lang.org/reference/types/closure.html">more details</a></p>
+<p><code>App</code> is a primary component of <code>actix_web</code> server referred to as an <code>Application Factory</code>
+and this factory is used to configure all the routes, middlewares and app wide data.</p>
+<p>Here <code>.app_data</code> function, takes a <code>web::Data</code> instance and allows access to it,
+in all the <code>route_handlers</code> anywhere in this case we are passing our database connection pool <code>pool</code>. </p>
+<p><code>web::scope</code> creates a scope, like a <code>namespace</code> for our routes, grouping them togther with the provided <code>prefix</code> as argument. All the routes under this scope will have a <code>/api</code> prefix.</p>
+<p>Now we finally add a route handler <code>hello</code>, here we using <code>closure</code> method to create a route passing a simple <code>closure</code> to return a <code>&amp;str</code> <code>&quot;Hello World&quot;</code>.</p>
+<p><code>.workers</code> function specifies the number of threads this server should run on. YES!!, applying multithreading to our server is that easy here. </p>
+<p><code>.bind</code> function requires an address to serve at.</p>
+<p><code>.run</code> returns a <code>future</code> which actually starts the server, but being a <code>future</code> it needs to be <code>awaited</code></p>
+<h2><a class="header" href="#running-our-server-in-mainrs" id="running-our-server-in-mainrs">Running our server in <code>main.rs</code></a></h2>
+<p>First we need to call <code>start_server</code> function in <code>main.rs</code> for our code to take effect. </p>
+<pre><pre class="playpen"><code class="language-rust">//src/main.rs
+ fn main() -&gt; Result&lt;(), Box&lt;dyn std::error:Error&gt;&gt; {
+        start_server()?;
+ } 
+</code></pre></pre>
+<p>Now you must be asking, hey, are you asking me call <code>start_server</code> here, what's that <code>?</code> doing here. Well ofcourse not, its just a simple 
+way of passing on the work of <code>handling errors</code> to the caller function, not the function itself, which in this case is <code>main</code>, but for 
+that <strong>rust</strong> requires the return type of the function in question be of type <code>Result</code>. </p>
+<p>As you must know, <code>Result</code> is a generic type and requires two <code>types</code>, one for the <code>Ok</code> response and other for <code>Err</code>, and <code>main</code> here 
+won't be returning anything, so we can put <code>()</code> for <code>Ok</code>, but we need to handle the errors</p>
+<h3><a class="header" href="#handling-errors-with-error-trait" id="handling-errors-with-error-trait">Handling errors with <code>Error</code> Trait</a></h3>
+<p>Different functions may yield different type of errors, so we can just put any concrete type here. We need to use a <code>trait</code>, specifically
+<code>std::error::Error</code> <code>trait</code>. This states that all <code>Result</code>'s <code>Err</code> should implement <code>std::error::Error</code>. </p>
+<p>So can't we use </p>
+<pre><pre class="playpen"><code class="language-rust">fn main() -&gt; Result&lt;(), std::error:Error&gt; {
+...
+}
+</code></pre></pre>
+<p>No we cannot, because rust is a super <code>type and memory safe</code> language. For every function rust compiler need to know the concrete return type and also the memory that type will require. It <code>main</code> were to handle <code>results</code> <code>(?)</code> for multiple function, there is very little
+possibility of all of them having same <code>Err</code> type for <code>Result</code>, and compiler won't be able to calculate the memory required in compile time. Fortunately there is a workaround for that.</p>
+<p><a href="https://doc.rust-lang.org/std/boxed/struct.Box.html">Box</a> is pointer to data stored in <code>heap</code>, we can use this to tell the compiler, please don't calculate the memory, just yet. Also <a href="https://doc.rust-lang.org/std/keyword.dyn.html">dyn</a> is used a prefix whenever a <code>trait</code> object is used as type. </p>
+<p>So finally, the resulting code would come out as </p>
+<pre><pre class="playpen"><code class="language-rust"> fn main() -&gt; Result&lt;(), Box&lt;dyn std::error:Error&gt;&gt; 
+</code></pre></pre>
+<h2><a class="header" href="#checking-our-server" id="checking-our-server">Checking our server</a></h2>
+<p>We have a setup a very basic route, <code>/api/hello</code>, which returns &quot;hello world&quot;, so if everythings worked fine, you'll see the string in your browser when visiting <a href="http://localhost:9000/api/hello">localhost:9000/api/hello</a></p>
+<h3><a class="header" href="#full-srcapimodrs-code" id="full-srcapimodrs-code">Full <code>src/api/mod.rs</code> code</a></h3>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use actix_web::{self, web, App, HttpServer};
+use diesel::r2d2::ConnectionManager;
+use r2d2::Pool;
+
+#[actix_web::main] //Sets up async runtime 
+pub async fn start_server() -&gt; std::io::Result&lt;()&gt; {
+    dotenv::dotenv().ok(); // Check and read from .env file
+
+    std::env::set_var(
+        &quot;RUST_LOG&quot;,
+        &quot;simeple-authe_server=debug,actix_web=info,actix_server=info&quot;,
+    ); // Enable logging for actix_web server
+    env_logger::init();
+
+    let database_url = std::env::var(&quot;DATABASE_URL&quot;).expect(&quot;DATABASE_URL must be set&quot;);
+
+    let api_url = std::env::var(&quot;API_URL&quot;).unwrap_or(String::from(&quot;localhost:9000&quot;));
+
+    let manager = ConnectionManager::&lt;diesel::PgConnection&gt;::new(database_url);
+
+    let pool: models::Pool = Pool::builder()
+        .build(manager)
+        .expect(&quot;Failed to connection to PG database&quot;);
+
+
+    HttpServer::new(move || {
+        App::new().app_data(web::Data::new(pool.clone())).service(
+            web::scope(&quot;/api&quot;)
+                .route(&quot;/hello&quot;, web::get().to(|| async {&quot;Hello World!&quot;}))
+        )
+    })
+    .workers(1) // Num of threads
+    .bind(api_url.as_str())? // binds to `api_url` address (localhost:9000)
+    .run()
+    .await
+}
+<span class="boring">}
+</span></code></pre></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="database-connection.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="api-errors.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="database-connection.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="api-errors.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+        
+        
+        <script type="text/javascript">
+            window.playpen_copyable = true;
+        </script>
+        
+
+        
+
+        
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>

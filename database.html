@@ -1,0 +1,339 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Building database models - Learning rust by building an unnecessarily complex Todo CLI</title>
+        
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+        <link rel="stylesheet" href="./mdbook-admonish.css">
+        
+
+        
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div id="sidebar-scrollbox" class="sidebar-scrollbox">
+                <ol class="chapter"><li class="expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="expanded "><a href="initialize.html"><strong aria-hidden="true">2.</strong> Initializing the project</a></li><li class="expanded "><a href="database.html" class="active"><strong aria-hidden="true">3.</strong> Building database models</a></li><li><ol class="section"><li class="expanded "><a href="models.html"><strong aria-hidden="true">3.1.</strong> Models as structs</a></li><li class="expanded "><a href="database-connection.html"><strong aria-hidden="true">3.2.</strong> Creating a connection to our database</a></li></ol></li><li class="expanded "><a href="init_api.html"><strong aria-hidden="true">4.</strong> Building Todo API</a></li><li><ol class="section"><li class="expanded "><a href="api-errors.html"><strong aria-hidden="true">4.1.</strong> API Errors</a></li><li class="expanded "><a href="api-auth.html"><strong aria-hidden="true">4.2.</strong> Authentication Handlers</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Learning rust by building an unnecessarily complex Todo CLI</h1>
+
+                        <div class="right-buttons">
+                            <a href="print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1><a class="header" href="#building-database-models" id="building-database-models">Building database models</a></h1>
+<p>We'll be using <a href="diesel.rs">Diesel</a> ORM to build models for our <code>PostgreSQL</code> database. </p>
+<p>There's a detailed <a href="https://diesel.rs/guides/getting-started.html">Getting Started</a> guide for installing, 
+and configuring <code>diesel</code> so we won't be going there. </p>
+<p>Instead let's move directly onto our models, <code>User</code> and <code>Todo</code></p>
+<h3><a class="header" href="#generating-a-new-migration" id="generating-a-new-migration">Generating a new migration</a></h3>
+<p>Before moving to rust, in <code>diesel</code> world, we have to create a <a href="https://docs.diesel.rs/master/diesel_migrations/index.html"><code>migration</code></a> to tell <code>postgres</code> how our database and tables should look like</p>
+<blockquote>
+<p>Ensure that <code>diesel</code> CLI is setup and  we have <code>.env</code> file in which <code>DB_URL</code> is set properly according to the diesel guide</p>
+</blockquote>
+<blockquote>
+<p>Add more crates to help us in our database ordeal</p>
+</blockquote>
+<pre><code class="language-toml">[dependencies]
+chrono = { version = &quot;0.4&quot;, features = [&quot;serde&quot;] } # For time related functions 
+diesel = { version = &quot;1.4&quot;, features = [&quot;postgres&quot;, &quot;uuidv07&quot;, &quot;r2d2&quot;, &quot;chrono&quot;] }
+dotenv = &quot;0.15&quot;
+uuid = { version = &quot;0.8&quot;, features = [&quot;serde&quot;, &quot;v4&quot;] }
+futures = &quot;0.3.8&quot; 
+serde = { version = &quot;1.0&quot;, features = [&quot;derive&quot;] }
+serde_json = &quot;1.0&quot;
+</code></pre>
+<pre><code class="language-config">DATABASE_URL=&quot;postgres://[user]:[pass]@localhost/todos-cli&quot;
+</code></pre>
+<p>To automatically create the database and verify database run</p>
+<p><code>diesel setup</code></p>
+<p>With all things soundly configured, we are ready for are first migration. To create one run
+<code>diesel migration generate init</code>. [init] here is the <code>migration's</code> name which can be anything. </p>
+<p>After the command is finished, we will have a <code>migrations</code> folder created in our project folder, 
+which will contain a folder referencing our <code>init</code> migration which in turn will have two files
+<code>up.sql</code> and <code>down.sql</code>.</p>
+<p><code>up.sql</code> contain <code>SQL</code> code that will executed when we execute this migration, so its the place to write code 
+for creating our <code>users</code> and <code>todos</code> table.</p>
+<pre><code class="language-sql">-- up.sql 
+
+CREATE TABLE users (
+    id UUID NOT NULL PRIMARY KEY,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
+    password VARCHAR(200) NOT NULL,
+    name VARCHAR(200) NOT NULL
+);
+
+CREATE TABLE todos (
+    id UUID NOT NULL PRIMARY KEY,
+
+    completed BOOLEAN NOT NULL,
+
+    title VARCHAR(200) NOT NULL,
+
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+);
+</code></pre>
+<p>Now, to run/execute this migration</p>
+<blockquote>
+<p><code>diesel migration run</code></p>
+</blockquote>
+<p>After this command, you can check the <code>postgres</code> database to verify if the tables are created properly.</p>
+<h3><a class="header" href="#but-waiittttt" id="but-waiittttt">BUT WAIITTTTT!!!</a></h3>
+<p>There's no relation between <code>todos</code> and <code>users</code> table, that's required to know what todos are from which user. But 
+don't worry, that's what migrations are for. 
+Just create a new migration named <code>user_todo_relation</code></p>
+<blockquote>
+<p><code>diesel migration generate user_todo_relation</code> </p>
+</blockquote>
+<p>now in the new <code>up.sql</code> paste the following </p>
+<pre><code class="language-sql">ALTER TABLE todos ADD COLUMN user_id UUID NOT NULL;
+
+ALTER TABLE todos ADD CONSTRAINT 
+    user_todo_foriegn_key 
+    FOREIGN KEY(user_id) REFERENCES users(id);
+</code></pre>
+<p>This will add a <code>user_id</code> and field to <code>todos</code> table and add a <code>CONSTRAINT</code> making it a <code>FOREIGN KEY</code>. Now 
+to make our problem go away </p>
+<blockquote>
+<p><code>diesel migration run</code></p>
+</blockquote>
+<p>Now, with that fixed, check the <code>schema.rs</code> file again, it will magically contain some code like </p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>diesel::table! {
+    todos (id) {
+        id -&gt; Uuid,
+        title -&gt; Varchar,
+        completed -&gt; Bool,
+        created_at -&gt; Timestamp,
+        updated_at -&gt; Timestamp,
+        user_id -&gt; Uuid,
+    }
+}
+
+diesel::table! {
+    users (id) {
+        id -&gt; Uuid,
+        email -&gt; Varchar,
+        created_at -&gt; Timestamp,
+        updated_at -&gt; Timestamp,
+        password -&gt; Varchar,
+        name -&gt; Varchar,
+    }
+}
+
+diesel::joinable!(todos -&gt; users (user_id));
+
+diesel::allow_tables_to_appear_in_same_query!(todos, users,);
+
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>diesel::table!...</code> if you haven't heard about <code>macros</code> in rust before, this syntax will look wierd at first.
+Again rust book to the rescue here to have a <a href="https://doc.rust-lang.org/book/ch19-06-macros.html?highlight=macros#macros">quick look</a></p>
+<h3><a class="header" href="#tldr" id="tldr">TLDR;</a></h3>
+<p><code>macros</code> in rust are quite amazing feature that will expand to something of a more extensive code when compiled 
+so that we can write simple code, without rewriting the mundane stuff, like functions but better.</p>
+<p>Now let's move to the rust part</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="initialize.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="models.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="initialize.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="models.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+        
+        
+        <script type="text/javascript">
+            window.playpen_copyable = true;
+        </script>
+        
+
+        
+
+        
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>

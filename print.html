@@ -1,0 +1,902 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Learning rust by building an unnecessarily complex Todo CLI</title>
+        
+        <meta name="robots" content="noindex" />
+        
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+        <link rel="stylesheet" href="./mdbook-admonish.css">
+        
+
+        
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div id="sidebar-scrollbox" class="sidebar-scrollbox">
+                <ol class="chapter"><li class="expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="expanded "><a href="initialize.html"><strong aria-hidden="true">2.</strong> Initializing the project</a></li><li class="expanded "><a href="database.html"><strong aria-hidden="true">3.</strong> Building database models</a></li><li><ol class="section"><li class="expanded "><a href="models.html"><strong aria-hidden="true">3.1.</strong> Models as structs</a></li><li class="expanded "><a href="database-connection.html"><strong aria-hidden="true">3.2.</strong> Creating a connection to our database</a></li></ol></li><li class="expanded "><a href="init_api.html"><strong aria-hidden="true">4.</strong> Building Todo API</a></li><li><ol class="section"><li class="expanded "><a href="api-errors.html"><strong aria-hidden="true">4.1.</strong> API Errors</a></li><li class="expanded "><a href="api-auth.html"><strong aria-hidden="true">4.2.</strong> Authentication Handlers</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Learning rust by building an unnecessarily complex Todo CLI</h1>
+
+                        <div class="right-buttons">
+                            <a href="print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1><a class="header" href="#learning-rust-by-building-an-unnecessarily-complex-todo-cli" id="learning-rust-by-building-an-unnecessarily-complex-todo-cli">Learning rust by building an unnecessarily complex Todo CLI</a></h1>
+<p>Learning rust is <strong>hard</strong> and so is finding decent projects online that will help understand the workings of the language while also giving a deep and easy enough view of the projects so that it will help us structure it. </p>
+<p>Like many of you, who will somehow tumble here looking for <code>rust todo cli</code> through google, I'm not a master at rust and not all of the code here will be the absolute perfect, nor is it intended to. We are here to explore different styles, patterns and techniques through which we can expand our
+knowledge. </p>
+<p>So owing to my own desire of learning of not just how to <code>rust</code> but to build a project here is , <code>Building an unnecessarily complex TODO CLI</code>.</p>
+<h2><a class="header" href="#who-is-this-for" id="who-is-this-for">Who is this for</a></h2>
+<p>I have tried to make this beginner friendly but, it'll help the person reading to have the great 
+<a href="https://doc.rust-lang.org/book">rust book</a> given a good look. </p>
+<h2><a class="header" href="#what-will-we-learn" id="what-will-we-learn">What will we learn</a></h2>
+<ul>
+<li>Building database models using <a href="https://diesel.rs/">Diesel ORM</a></li>
+<li>Booting up a web server for api using <a href="https://actix.rs/">Actix Web</a></li>
+<li>Authentication in APIs with <a href="https://jwt.io">JWT</a></li>
+<li>Building a CLI using <a href="https://docs.rs/clap/latest/clap/">Clap</a></li>
+<li>Creating a terminal based UI for our CLI using <a href="https://github.com/fdehau/tui-rs">Tui-rs</a>
+and <a href="https://github.com/crossterm-rs/crossterm">Crossterm</a></li>
+</ul>
+<p>So if the the things listed above, intrigues you. Let carry on.</p>
+<p><a href="database.html">Building database models</a></p>
+<h1><a class="header" href="#initializing-the-project" id="initializing-the-project">Initializing the project</a></h1>
+<p>To create a new rust project </p>
+<p><code>cargo new todo-cli</code></p>
+<p>We'll be adding dependencies to our project as we go along </p>
+<p>Let's create a base structure for our project,</p>
+<pre><code class="language-bash">+---src/api
+|    +---mod.rs
++---src/models
+|    +---mod.rs
++---src/ui
+|    +---mod.rs
++---src/schema.rs # will contain auto generated diesel code (required by diesel)
++---migrations/ # will contain migration files when generated (required by diesel)
++---main.rs
+</code></pre>
+<blockquote>
+<p>?? What is <code>mod.rs</code> here, why is it needed ?</p>
+</blockquote>
+<p>Let's answer this before we move on, as its pretty easy and also pretty important concept for building a 
+project structure.</p>
+<p>Rust module system is very neatly defined in the book <a href="https://doc.rust-lang.org/book/ch07-00-managing-growing-projects-with-packages-crates-and-modules.html">here</a>, take a look here first</p>
+<h3><a class="header" href="#tldr" id="tldr">TLDR;</a></h3>
+<p><code>mod.rs</code> file in a directory, allows us to define all sub-modules in one place. All the directories and files in <code>src</code> 
+work as modules with name of the directory/file as the module name.</p>
+<p><sup class="footnote-reference"><a href="#note">1</a></sup> We will look at its usage in further sections</p>
+<p>We have our directories/modules, but our <code>main.rs</code> doesn't even know they exist. Let's fix that </p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>//main.rs
+
+mod api;
+mod ui;
+mod models;
+
+...
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>mod</code> keyword makes rust look for modules with the corresponding name in our project.</p>
+<p>This will be our project's base structure, </p>
+<p>Now let's setup out database</p>
+<h1><a class="header" href="#building-database-models" id="building-database-models">Building database models</a></h1>
+<p>We'll be using <a href="diesel.rs">Diesel</a> ORM to build models for our <code>PostgreSQL</code> database. </p>
+<p>There's a detailed <a href="https://diesel.rs/guides/getting-started.html">Getting Started</a> guide for installing, 
+and configuring <code>diesel</code> so we won't be going there. </p>
+<p>Instead let's move directly onto our models, <code>User</code> and <code>Todo</code></p>
+<h3><a class="header" href="#generating-a-new-migration" id="generating-a-new-migration">Generating a new migration</a></h3>
+<p>Before moving to rust, in <code>diesel</code> world, we have to create a <a href="https://docs.diesel.rs/master/diesel_migrations/index.html"><code>migration</code></a> to tell <code>postgres</code> how our database and tables should look like</p>
+<blockquote>
+<p>Ensure that <code>diesel</code> CLI is setup and  we have <code>.env</code> file in which <code>DB_URL</code> is set properly according to the diesel guide</p>
+</blockquote>
+<blockquote>
+<p>Add more crates to help us in our database ordeal</p>
+</blockquote>
+<pre><code class="language-toml">[dependencies]
+chrono = { version = &quot;0.4&quot;, features = [&quot;serde&quot;] } # For time related functions 
+diesel = { version = &quot;1.4&quot;, features = [&quot;postgres&quot;, &quot;uuidv07&quot;, &quot;r2d2&quot;, &quot;chrono&quot;] }
+dotenv = &quot;0.15&quot;
+uuid = { version = &quot;0.8&quot;, features = [&quot;serde&quot;, &quot;v4&quot;] }
+futures = &quot;0.3.8&quot; 
+serde = { version = &quot;1.0&quot;, features = [&quot;derive&quot;] }
+serde_json = &quot;1.0&quot;
+</code></pre>
+<pre><code class="language-config">DATABASE_URL=&quot;postgres://[user]:[pass]@localhost/todos-cli&quot;
+</code></pre>
+<p>To automatically create the database and verify database run</p>
+<p><code>diesel setup</code></p>
+<p>With all things soundly configured, we are ready for are first migration. To create one run
+<code>diesel migration generate init</code>. [init] here is the <code>migration's</code> name which can be anything. </p>
+<p>After the command is finished, we will have a <code>migrations</code> folder created in our project folder, 
+which will contain a folder referencing our <code>init</code> migration which in turn will have two files
+<code>up.sql</code> and <code>down.sql</code>.</p>
+<p><code>up.sql</code> contain <code>SQL</code> code that will executed when we execute this migration, so its the place to write code 
+for creating our <code>users</code> and <code>todos</code> table.</p>
+<pre><code class="language-sql">-- up.sql 
+
+CREATE TABLE users (
+    id UUID NOT NULL PRIMARY KEY,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
+    password VARCHAR(200) NOT NULL,
+    name VARCHAR(200) NOT NULL
+);
+
+CREATE TABLE todos (
+    id UUID NOT NULL PRIMARY KEY,
+
+    completed BOOLEAN NOT NULL,
+
+    title VARCHAR(200) NOT NULL,
+
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+);
+</code></pre>
+<p>Now, to run/execute this migration</p>
+<blockquote>
+<p><code>diesel migration run</code></p>
+</blockquote>
+<p>After this command, you can check the <code>postgres</code> database to verify if the tables are created properly.</p>
+<h3><a class="header" href="#but-waiittttt" id="but-waiittttt">BUT WAIITTTTT!!!</a></h3>
+<p>There's no relation between <code>todos</code> and <code>users</code> table, that's required to know what todos are from which user. But 
+don't worry, that's what migrations are for. 
+Just create a new migration named <code>user_todo_relation</code></p>
+<blockquote>
+<p><code>diesel migration generate user_todo_relation</code> </p>
+</blockquote>
+<p>now in the new <code>up.sql</code> paste the following </p>
+<pre><code class="language-sql">ALTER TABLE todos ADD COLUMN user_id UUID NOT NULL;
+
+ALTER TABLE todos ADD CONSTRAINT 
+    user_todo_foriegn_key 
+    FOREIGN KEY(user_id) REFERENCES users(id);
+</code></pre>
+<p>This will add a <code>user_id</code> and field to <code>todos</code> table and add a <code>CONSTRAINT</code> making it a <code>FOREIGN KEY</code>. Now 
+to make our problem go away </p>
+<blockquote>
+<p><code>diesel migration run</code></p>
+</blockquote>
+<p>Now, with that fixed, check the <code>schema.rs</code> file again, it will magically contain some code like </p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>diesel::table! {
+    todos (id) {
+        id -&gt; Uuid,
+        title -&gt; Varchar,
+        completed -&gt; Bool,
+        created_at -&gt; Timestamp,
+        updated_at -&gt; Timestamp,
+        user_id -&gt; Uuid,
+    }
+}
+
+diesel::table! {
+    users (id) {
+        id -&gt; Uuid,
+        email -&gt; Varchar,
+        created_at -&gt; Timestamp,
+        updated_at -&gt; Timestamp,
+        password -&gt; Varchar,
+        name -&gt; Varchar,
+    }
+}
+
+diesel::joinable!(todos -&gt; users (user_id));
+
+diesel::allow_tables_to_appear_in_same_query!(todos, users,);
+
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>diesel::table!...</code> if you haven't heard about <code>macros</code> in rust before, this syntax will look wierd at first.
+Again rust book to the rescue here to have a <a href="https://doc.rust-lang.org/book/ch19-06-macros.html?highlight=macros#macros">quick look</a></p>
+<h3><a class="header" href="#tldr-1" id="tldr-1">TLDR;</a></h3>
+<p><code>macros</code> in rust are quite amazing feature that will expand to something of a more extensive code when compiled 
+so that we can write simple code, without rewriting the mundane stuff, like functions but better.</p>
+<p>Now let's move to the rust part</p>
+<h1><a class="header" href="#models-as-structs" id="models-as-structs">Models as structs</a></h1>
+<p>Now as we have our <code>postgres</code> side setup and ready, its time now to integrate it with our rust project.</p>
+<p>We have already created a <code>src/models</code> directory, to reflect the tables in our database, we need to create two 
+<code>structs</code> in the directory for each table. So lets create them.</p>
+<p>Our <code>src/models</code> directory should look like this.</p>
+<pre><code class="language-bash">+---src/models
+|    +---mod.rs
+|    +---todo_model.rs
+|    +---user_model.rs
+</code></pre>
+<h3><a class="header" href="#user-model" id="user-model">User Model</a></h3>
+<p>Let's create our first struct, for <code>user</code> </p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>//src/user_model.rs
+use super::{super::schema::*};
+use diesel::prelude::*;
+use diesel::{Insertable, Queryable};
+use serde::{Deserialize, Serialize};
+use uuid;
+
+#[derive(Debug, Deserialize, Serialize, Insertable, Queryable)]
+#[table_name = &quot;users&quot;]
+pub struct User {
+    pub id: uuid::Uuid, // using uuid to generate random and unique strings for id
+    pub email: String,
+    pub created_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
+    pub password: String,
+    pub name: String,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>First and foremost , we are importing all the required modules, most important of which <code>use diesel::prelude::*</code>
+which contains all the required traits we will be using later</p>
+<p>This is a simple rust struct containing required field for a user, but on top there are two new things
+<code>#derive... and #[table_name = &quot;users&quot;]</code>, these both are <code>attributes</code> for the struct <code>User</code>. </p>
+<p>Our first <code>attributes</code> contains <code>#[derive...</code> in which <code>derive</code> is a macro which will write <code>impl</code> blocks 
+for us for the provided Traits, namely </p>
+<ul>
+<li><code>Debug</code>, helps in printing stuff to stdout easily</li>
+<li><code>Deserialize</code>, <code>Serialize</code> will help in [de]serialization for the struct in <code>json</code> as we implement our APIs</li>
+<li><code>Insertable</code>, <code>Queryable</code> are <a href="https://doc.rust-lang.org/book/ch10-02-traits.html"><code>Traits</code></a>, provided by 
+<code>diesel</code> which are required if we want to insert an instance of this struct in a table or query from table 
+respectively</li>
+</ul>
+<p><sup class="footnote-reference"><a href="#note">1</a></sup> <code>Queryable</code> trait requires the fields for the struct to be in the same order as generated in the <code>schema.rs</code>, so make sure both are in the same order.</p>
+<p>Second attribute, tells rust the name of the <code>table</code> where to insert/query </p>
+<p>Now, having a simple struct won't help us much right ? Lets simplify creating a new instance of <code>User</code> with a <code>method</code>.</p>
+<p>Creating methods for a struct is referred to as <code>implementing a struct</code> in rust. </p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>impl StructName {
+    ...methods 
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Using this, we can create a function that will initialize our <code>struct</code> with a method, given required parameters. </p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>impl User {
+    pub fn from_details&lt;T: Into&lt;String&gt;&gt;(name: T, email: T, password: T) -&gt; User {
+        User {
+            email: email.into(),
+            password: password.into(),
+            id: uuid::Uuid::new_v4(),
+            name: name.into(),
+            created_at: chrono::Local::now().naive_local(),
+            updated_at: chrono::Local::now().naive_local(),
+        }
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Something new again right, <code>T: Into&lt;String&gt;</code>, this syntax is called giving a <code>bound</code> to a generic paramerter which in this case is
+<code>T</code>, this make sure that any parameter provided of type <code>T</code> implements <code>Into&lt;String&gt;</code>. email, password and name are <code>String</code> fields
+in our struct <code>User</code>, we could have simply used <code>String</code> as <code>type</code> of parameters instead of T. Doing it this way, 
+we can pass any type which implements 
+<a href="https://doc.rust-lang.org/rust-by-example/conversion/from_into.html"><code>Into&lt;String&gt;</code></a> for eg: <code>&amp;str</code> and <code>String</code>. </p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>    User::from_details(name: &quot;john&quot;, ....
+    // OR 
+    User::from_details(name: String::from(&quot;john&quot;),....
+
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>.into()</code> function will convert the value to the required type which in this case is <code>String</code>. </p>
+<h3><a class="header" href="#todo-model" id="todo-model">Todo Model</a></h3>
+<p>After creating <code>User</code>, <code>Todo</code> model is pretty simple </p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>// src/todo_model.rs
+
+use crate::schema::*;
+use diesel::{Insertable, Queryable};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize, Insertable, Queryable)]
+#[table_name = &quot;todos&quot;]
+pub struct Todo {
+    pub id: uuid::Uuid,
+    pub title: String,
+    pub completed: bool,
+    pub created_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
+    pub user_id: uuid::Uuid,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>And as only <code>title</code> and <code>user_id</code> are required to initialize a <code>todo</code> we can create a simple constructor function </p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>//src/todo_model.rs
+...
+
+impl Todo {
+    pub fn from(title: String, user_id: uuid::Uuid) -&gt; Self {
+        Self {
+            id: uuid::Uuid::new_v4(),
+            completed: false,
+            title,
+            user_id,
+            created_at: chrono::Local::now().naive_local(),
+            updated_at: chrono::Local::now().naive_local(),
+        }
+    }
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<h3><a class="header" href="#declaring-module" id="declaring-module">Declaring Module</a></h3>
+<p>Now that are models are setup, we can't use them just yet, they are available yet out side their respective files. Rust doesn't yet understand how the project is structured yet.</p>
+<p>We can rectify that easily using rust's simple module system. Remember the mod.rs file. We just need to tell rust that in our submodule <code>models</code> there the two other files <code>todo_model</code> and <code>user_model</code> </p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>//src/models/mod.rs
+pub(crate) mod todo_model;
+pub(crate) mod user_model;
+<span class="boring">}
+</span></code></pre></pre>
+<p><sup class="footnote-reference"><a href="#note">1</a></sup> module name should be equal to the corresponding file name</p>
+<p><code>pub</code> keyword is used to define define <code>visibility</code> of types in rust.
+In this case we want our models to be available outside the <code>models</code> 
+directory so we need <code>pub</code> for that. <code>pub(crate)</code> does that same thing but 
+it limits visibilty to this particular crate only. This is not actually required here,
+but, in case we were building our crate as a library, and we don't want people using our crate in their project modify or see some aspects of our code, its quite handy.</p>
+<h1><a class="header" href="#creating-a-connection-to-our-database" id="creating-a-connection-to-our-database">Creating a connection to our database</a></h1>
+<p>With our database almost setup, We
+just need to do one more thing, create a connection to our database in rust. 
+We will be using <a href="https://docs.rs/r2d2/latest/r2d2/">r2d2</a> for managing our
+database connection. </p>
+<p><code>r2d2</code> crate provides us with a <code>generic connection pool</code>. It handles database 
+connections for us, simplifying the process of opening and closing connections
+making our life a little bit easier. It's an overkill for this kind of project
+but the setup is pretty straight forward so why not.</p>
+<h3><a class="header" href="#adding-required-dependencies" id="adding-required-dependencies">Adding required dependencies</a></h3>
+<p>Add the following to <code>[dependencies]</code> in <code>Cargo.toml</code></p>
+<pre><code class="language-toml">r2d2 = &quot;0.8&quot;
+</code></pre>
+<p><code>r2d2</code> requires a <code>ConnectionManager</code> and type of connection to define a <code>Pool</code>
+which in our case are going to be provided by <code>diesel</code>.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>//src/models/mod.rs
+//... 
+use diesel::{r2d2::ConnectionManager, PgConnection};
+<span class="boring">}
+</span></code></pre></pre>
+<p>Our ConnectionPool for the api would be of type 
+<code>r2d2::Pool&lt;ConnectionManager&lt;PgConnection&gt;&gt;</code>. As you can see its quite handful
+and we require its usage multiple times in our project. So to save our fingers 
+from excruciating pain afterwards, we declare a new <code>type</code> to shorten it.</p>
+<p><code>pub type Pool = r2d2::Pool&lt;ConnectionManager&lt;PgConnection&gt;&gt;;</code> </p>
+<h3><a class="header" href="#full-srcmodelsmodrs" id="full-srcmodelsmodrs">Full src/models/mod.rs</a></h3>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>pub(crate) mod todo_model;
+pub(crate) mod user_model;
+
+use diesel::{r2d2::ConnectionManager, PgConnection};
+
+pub type Pool = r2d2::Pool&lt;ConnectionManager&lt;PgConnection&gt;&gt;;
+<span class="boring">}
+</span></code></pre></pre>
+<h1><a class="header" href="#building-todo-api" id="building-todo-api">Building Todo API</a></h1>
+<p>Now to the most exiting part of any web application, building the REST Apis <code>/s</code>.</p>
+<p>We will be using <a href="https://actix_web.rs">actix_web</a> for our apis. Currently there
+are several alternatives to <code>actix</code> for building apis and there's no particular 
+reason I chose it, other that I found a decent tutorial for it first 😬.</p>
+<h3><a class="header" href="#adding-required-dependencies-1" id="adding-required-dependencies-1">Adding required dependencies</a></h3>
+<p>Add the following to <code>[dependencies]</code> section in Cargo.toml</p>
+<pre><code class="language-toml">actix-web = &quot;4.0&quot; # For web server and Apis 
+jsonwebtoken = &quot;8&quot; #For securing routes 
+reqwest = { version = &quot;0.11.11&quot;, features = [&quot;json&quot;, &quot;blocking&quot;] } # for making api calls in rust
+rust-argon2 = &quot;1.0&quot; # Hashing users' passwords
+lazy_static = &quot;1.4&quot; # Explained later
+</code></pre>
+<h3><a class="header" href="#starting-a-server" id="starting-a-server">Starting a server</a></h3>
+<p><code>actix_web</code> works asynchronously, which means it requires an <code>async</code> runtime, as 
+rust doesn't have one inherently. <code>actix_web</code> uses the runtime provided by
+<a href="https://tokio.rs/">tokio</a>. For our rust code to work asynchronously, we need to 
+setup an async runtime, <code>actix_web</code> provides us with an <code>attribute macro</code>, <code>[main]</code>
+which sets it up, with a single line. Macros are just too powerful.</p>
+<p>In <code>src/api/mod.rs</code> write the following code</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use actix_web::{self, web, App, HttpServer};
+use diesel::r2d2::ConnectionManager;
+use r2d2::Pool;
+
+#[actix_web::main] //Sets up async runtime 
+pub async fn start_server() -&gt; std::io::Result&lt;()&gt; {
+    dotenv::dotenv().ok(); // Check and read from .env file
+
+    std::env::set_var(
+        &quot;RUST_LOG&quot;,
+        &quot;simeple-authe_server=debug,actix_web=info,actix_server=info&quot;,
+    ); // Enable logging for actix_web server
+    env_logger::init();
+
+    let database_url = std::env::var(&quot;DATABASE_URL&quot;).expect(&quot;DATABASE_URL must be set&quot;);
+
+    let api_url = std::env::var(&quot;API_URL&quot;).unwrap_or(String::from(&quot;localhost:9000&quot;));
+
+    let manager = ConnectionManager::&lt;diesel::PgConnection&gt;::new(database_url);
+
+    let pool: models::Pool = Pool::builder()
+        .build(manager)
+        .expect(&quot;Failed to connection to PG database&quot;);
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Till here we are reading <code>DATABASE_URL</code> and <code>API_URL</code> from our <code>.env</code> file. </p>
+<p>Then creating a new <code>diesel</code> connection manager and building an <code>r2d2</code> pool to 
+using it to manage database connections. </p>
+<h2><a class="header" href="#creating-a-server" id="creating-a-server">Creating a server</a></h2>
+<p>With that out of the way here's the actual server</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>// src/api/mod.rs
+pub async fn start_server() -&gt; std::io::Result&lt;()&gt; {
+    //...
+    HttpServer::new(move || {
+        App::new().app_data(web::Data::new(pool.clone())).service(
+            web::scope(&quot;/api&quot;)
+                .route(&quot;/hello&quot;, web::get().to(|| async {&quot;Hello World!&quot;}))
+        )
+    })
+    .workers(1) // Num of threads
+    .bind(api_url.as_str())? // binds to `api_url` address (localhost:9000)
+    .run()
+    .await
+ }
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>HttpServer::new()</code> takes a <code>closure</code> and creates a new server.
+<code>move</code> keyword is required to capture data from outside the closure. <a href="https://doc.rust-lang.org/reference/types/closure.html">more details</a></p>
+<p><code>App</code> is a primary component of <code>actix_web</code> server referred to as an <code>Application Factory</code>
+and this factory is used to configure all the routes, middlewares and app wide data.</p>
+<p>Here <code>.app_data</code> function, takes a <code>web::Data</code> instance and allows access to it,
+in all the <code>route_handlers</code> anywhere in this case we are passing our database connection pool <code>pool</code>. </p>
+<p><code>web::scope</code> creates a scope, like a <code>namespace</code> for our routes, grouping them togther with the provided <code>prefix</code> as argument. All the routes under this scope will have a <code>/api</code> prefix.</p>
+<p>Now we finally add a route handler <code>hello</code>, here we using <code>closure</code> method to create a route passing a simple <code>closure</code> to return a <code>&amp;str</code> <code>&quot;Hello World&quot;</code>.</p>
+<p><code>.workers</code> function specifies the number of threads this server should run on. YES!!, applying multithreading to our server is that easy here. </p>
+<p><code>.bind</code> function requires an address to serve at.</p>
+<p><code>.run</code> returns a <code>future</code> which actually starts the server, but being a <code>future</code> it needs to be <code>awaited</code></p>
+<h2><a class="header" href="#running-our-server-in-mainrs" id="running-our-server-in-mainrs">Running our server in <code>main.rs</code></a></h2>
+<p>First we need to call <code>start_server</code> function in <code>main.rs</code> for our code to take effect. </p>
+<pre><pre class="playpen"><code class="language-rust">//src/main.rs
+ fn main() -&gt; Result&lt;(), Box&lt;dyn std::error:Error&gt;&gt; {
+        start_server()?;
+ } 
+</code></pre></pre>
+<p>Now you must be asking, hey, are you asking me call <code>start_server</code> here, what's that <code>?</code> doing here. Well ofcourse not, its just a simple 
+way of passing on the work of <code>handling errors</code> to the caller function, not the function itself, which in this case is <code>main</code>, but for 
+that <strong>rust</strong> requires the return type of the function in question be of type <code>Result</code>. </p>
+<p>As you must know, <code>Result</code> is a generic type and requires two <code>types</code>, one for the <code>Ok</code> response and other for <code>Err</code>, and <code>main</code> here 
+won't be returning anything, so we can put <code>()</code> for <code>Ok</code>, but we need to handle the errors</p>
+<h3><a class="header" href="#handling-errors-with-error-trait" id="handling-errors-with-error-trait">Handling errors with <code>Error</code> Trait</a></h3>
+<p>Different functions may yield different type of errors, so we can just put any concrete type here. We need to use a <code>trait</code>, specifically
+<code>std::error::Error</code> <code>trait</code>. This states that all <code>Result</code>'s <code>Err</code> should implement <code>std::error::Error</code>. </p>
+<p>So can't we use </p>
+<pre><pre class="playpen"><code class="language-rust">fn main() -&gt; Result&lt;(), std::error:Error&gt; {
+...
+}
+</code></pre></pre>
+<p>No we cannot, because rust is a super <code>type and memory safe</code> language. For every function rust compiler need to know the concrete return type and also the memory that type will require. It <code>main</code> were to handle <code>results</code> <code>(?)</code> for multiple function, there is very little
+possibility of all of them having same <code>Err</code> type for <code>Result</code>, and compiler won't be able to calculate the memory required in compile time. Fortunately there is a workaround for that.</p>
+<p><a href="https://doc.rust-lang.org/std/boxed/struct.Box.html">Box</a> is pointer to data stored in <code>heap</code>, we can use this to tell the compiler, please don't calculate the memory, just yet. Also <a href="https://doc.rust-lang.org/std/keyword.dyn.html">dyn</a> is used a prefix whenever a <code>trait</code> object is used as type. </p>
+<p>So finally, the resulting code would come out as </p>
+<pre><pre class="playpen"><code class="language-rust"> fn main() -&gt; Result&lt;(), Box&lt;dyn std::error:Error&gt;&gt; 
+</code></pre></pre>
+<h2><a class="header" href="#checking-our-server" id="checking-our-server">Checking our server</a></h2>
+<p>We have a setup a very basic route, <code>/api/hello</code>, which returns &quot;hello world&quot;, so if everythings worked fine, you'll see the string in your browser when visiting <a href="http://localhost:9000/api/hello">localhost:9000/api/hello</a></p>
+<h3><a class="header" href="#full-srcapimodrs-code" id="full-srcapimodrs-code">Full <code>src/api/mod.rs</code> code</a></h3>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use actix_web::{self, web, App, HttpServer};
+use diesel::r2d2::ConnectionManager;
+use r2d2::Pool;
+
+#[actix_web::main] //Sets up async runtime 
+pub async fn start_server() -&gt; std::io::Result&lt;()&gt; {
+    dotenv::dotenv().ok(); // Check and read from .env file
+
+    std::env::set_var(
+        &quot;RUST_LOG&quot;,
+        &quot;simeple-authe_server=debug,actix_web=info,actix_server=info&quot;,
+    ); // Enable logging for actix_web server
+    env_logger::init();
+
+    let database_url = std::env::var(&quot;DATABASE_URL&quot;).expect(&quot;DATABASE_URL must be set&quot;);
+
+    let api_url = std::env::var(&quot;API_URL&quot;).unwrap_or(String::from(&quot;localhost:9000&quot;));
+
+    let manager = ConnectionManager::&lt;diesel::PgConnection&gt;::new(database_url);
+
+    let pool: models::Pool = Pool::builder()
+        .build(manager)
+        .expect(&quot;Failed to connection to PG database&quot;);
+
+
+    HttpServer::new(move || {
+        App::new().app_data(web::Data::new(pool.clone())).service(
+            web::scope(&quot;/api&quot;)
+                .route(&quot;/hello&quot;, web::get().to(|| async {&quot;Hello World!&quot;}))
+        )
+    })
+    .workers(1) // Num of threads
+    .bind(api_url.as_str())? // binds to `api_url` address (localhost:9000)
+    .run()
+    .await
+}
+<span class="boring">}
+</span></code></pre></pre>
+<h1><a class="header" href="#api-errors" id="api-errors">API Errors</a></h1>
+<p>Before going on to create request handlers, we must consider that for any reason our APIs may produce an error, and error handling
+is a big part in creating a API server. User's need to be sent relevant error messages for any errors and so does our server needs to log 
+required details about any particular error. </p>
+<p>Here we will look at one approach towards handling those nifty errors.</p>
+<h3><a class="header" href="#structuring-our-api-errors" id="structuring-our-api-errors">Structuring our API Errors</a></h3>
+<p>As the book's title says <strong>Unnecessarily Complex</strong>, we are going to make these error <code>enums</code> a little bit granular </p>
+<ul>
+<li><code>AuthError</code> for handling <strong>Authentication Errors</strong> in API</li>
+<li><code>TodoApiError</code> for handling all <strong>Api Errors</strong></li>
+<li><code>TodoError</code>, the superset for handling all the CLI's errors</li>
+</ul>
+<p><img src="images/errors.png" alt="Errors Structure" /></p>
+<p>Here we will implement <code>AuthError</code> and <code>TodoApiError</code> and leave <code>TodoError</code> for when we are finished with our APIs</p>
+<h3><a class="header" href="#error-enum-for-authentication-errors" id="error-enum-for-authentication-errors">Error Enum for Authentication Errors</a></h3>
+<p>Create a new file <code>src/api/errors.rs</code>.</p>
+<p>Now we'll create a new <code>enum</code> <code>AuthError</code> for possible Authentication errors </p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>#[derive(Debug)]
+pub enum AuthError {
+    Claims(serde_json::Error),
+    ///Token is invalid
+    InvalidToken,
+    /// Authorization header is not provided by requesting client 
+    NoAuthorizationHeader,
+    /// Authorization header is not of the format `Bearer {token}` 
+    InvalidAuthorizationHeader,
+    /// Jwt token expired
+    TokenExpired,
+    
+    Unauthorized,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>Claims</code> value is for handling <code>JWT</code> encoding, decoding errors which we look upon later, but all others are quite self explanatory. Right ?</p>
+<p>We have our enum ready, but to render useful text from them, we need to implement <a href="https://doc.rust-lang.org/std/fmt/trait.Display.html"><code>std::fmt::Display</code></a> trait for it, which will deduce a relevant string from any <code>AuthError</code> value when converted to <code>String</code>. </p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>impl std::fmt::Display for AuthError {
+    fn fmt(&amp;self, f: &amp;mut std::fmt::Formatter&lt;'_&gt;) -&gt; std::fmt::Result {
+        match self {
+            Self::InvalidAuthorizationHeader =&gt; {
+                write!(f, &quot;Authorization header is not in valid format &quot;)
+            }
+            Self::NoAuthorizationHeader =&gt; write!(f, &quot;No Authorization Header&quot;),
+            Self::Claims(e) =&gt; write!(f, &quot;Error while Deserializing JWT: {}&quot;, e),
+            Self::InvalidToken =&gt; write!(f, &quot;Invalid JWT Token&quot;),
+            Self::TokenExpired =&gt; write!(f, &quot;Token Expired&quot;),
+            Self::Unauthorized =&gt; write!(f, &quot;Unauthorized&quot;),
+        }
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<h3><a class="header" href="#encompassing-autherror-in-todoapierror" id="encompassing-autherror-in-todoapierror">Encompassing AuthError in TodoApiError</a></h3>
+<h1><a class="header" href="#authentication-request-handlers" id="authentication-request-handlers">Authentication Request Handlers</a></h1>
+<p>Our server is up and running. So how about we first secure our APIs. </p>
+<h2><a class="header" href="#routerequest-handlers" id="routerequest-handlers">Route/Request Handlers</a></h2>
+<p>In <code>actix_web</code> every <code>route</code> needs to have a <a href="https://actix.rs/actix-web/actix_web/trait.Handler.html"><code>request handler</code></a>, in the
+<a href="init_api.html#creating-a-server">last section</a> we created a simple <code>route handler</code> using a <code>closure</code>. 
+For more sophisticated handlers we can create a function and use it. </p>
+<pre><code class="language-admonishexample">```rust
+use actix_web;
+async fn hello() -&gt; actix_web::HttpResponse {
+    HttpResponse::Ok()
+        .content_type(ContentType::plaintext())
+        .body(&quot;Hello World&quot;)
+}
+
+// Usage
+...
+.route(&quot;/hello&quot;, web::get().to(hello))
+...
+```
+</code></pre>
+<p>A <code>request handler</code> function takes any incoming data like <code>query params</code>, <code>AppData</code> and returns aything that can be converted to 
+<code>HttpResponse</code> and if the handler can produce errors, return signature changes.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>async fn hello() -&gt; Result&lt;actix_web::HttpResponse, actix_web::Error&gt; {
+...
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>actix_web</code> also makes it easier for us to define new routes using an <code>attribute macro</code> <code>route</code>, instead of using <code>.route()</code> we can define our routes as </p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>#[route(&quot;/hello&quot;, method=&quot;GET&quot;)]
+...
+<span class="boring">}
+</span></code></pre></pre>
+<h3><a class="header" href="#creating-dtos-for-request-handlers" id="creating-dtos-for-request-handlers">Creating DTOs for request handlers</a></h3>
+<p>For satisfying rust's type safety, we need to create new types for incoming body for our requests such as</p>
+<pre><code class="language-json">{ 
+    &quot;email&quot;: &quot;example@example.com&quot;,
+    &quot;password&quot;: &quot;supersecureone&quot;
+}
+</code></pre>
+<p>these types can generally be called <code>DTOs</code> short for Data Transfer Object</p>
+<p>So let's create them in <code>src/api/dtos/auth.rs</code></p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>// src/apis/dtos/auth.rs
+
+#[derive(Debug, serde::Deserialize)]
+pub struct LoginDTO {
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct LoginResponseDTO {
+    pub id: String,
+    pub email: String,
+    pub token: String,
+}
+
+pub type SignupResponseDTO = LoginResponseDTO;
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct SignupRequestDTO {
+    pub email: String,
+    pub password: String,
+    pub name: String,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>derive</code> is again here to help us, in addition to <code>Debug</code> we are adding <code>serde::Deserialze</code> for <code>LoginDTO</code> as we need to <code>deserialize</code> from <code>string</code> to our struct.
+For our response dtos <code>SignupResponseDTO</code> and <code>LoginResponseDTO</code> we need to <code>serialize</code> them to <code>string</code> for sending response to browser.</p>
+<p>As we have created a new directory here, owing to rust's module system, we need to create a <code>src/api/dtos/mod.rs</code> as well and then use the submodule <code>dtos</code> in our <code>api</code> module</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>// src/api/dtos/mod.rs
+pub mod auth;
+<span class="boring">}
+</span></code></pre></pre>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>//src/api/mod.rs
+mod dtos;
+// We don't necessarily need declare dtos [pub] as we won't using it outside of api module
+...
+<span class="boring">}
+</span></code></pre></pre>
+<h2><a class="header" href="#signup-process" id="signup-process">Signup process</a></h2>
+<p>Here's an easy flowchart explaining what our signup process would look like</p>
+<p><img src="images/signup-dfd.jpg" alt="Signup Process" /></p>
+<p>Few important functionalities, which are not implemented yet are <strong>hashing password</strong> and <strong>creating/encoding a JWT token</strong></p>
+<p>You can read more about <a href="https://jwt.io"><code>JWT</code></a>, basically they are encoded strings which contain useful information about a logged 
+in user and helps us verify users' identity. Our client needs to store this token on login/sigup and send the token back to server 
+on every request containing user specific or sensitive data. </p>
+<h3><a class="header" href="#hashing-password" id="hashing-password">Hashing Password</a></h3>
+<p>We hash passwords so that no can read the plain text version or recover the plain text from any encrypted text. </p>
+<p>We'll be using a rust crate <a href="https://docs.rs/rust-argon2/latest/argon2/"><code>argon2</code></a> to do the hashing for us. </p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+        
+        
+        <script type="text/javascript">
+            window.playpen_copyable = true;
+        </script>
+        
+
+        
+
+        
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+        
+        <script type="text/javascript">
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+        
+        
+
+    </body>
+</html>
