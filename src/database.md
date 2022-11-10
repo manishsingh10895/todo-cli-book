@@ -1,6 +1,5 @@
 # Building database models
 
-
 We'll be using [Diesel](diesel.rs) ORM to build models for our `PostgreSQL` database. 
 
 There's a detailed [Getting Started](https://diesel.rs/guides/getting-started.html) guide for installing, 
@@ -23,6 +22,7 @@ dotenv = "0.15"
 uuid = { version = "0.8", features = ["serde", "v4"] }
 futures = "0.3.8" 
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 ```
 
 

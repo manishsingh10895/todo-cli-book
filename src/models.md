@@ -137,5 +137,25 @@ impl Todo {
         }
     }
 }
+
 ```
+
+### Declaring Module
+Now that are models are setup, we can't use them just yet, they are available yet out side their respective files. Rust doesn't yet understand how the project is structured yet.
+
+We can rectify that easily using rust's simple module system. Remember the mod.rs file. We just need to tell rust that in our submodule `models` there the two other files `todo_model` and `user_model` 
+
+```rust
+//src/models/mod.rs
+pub(crate) mod todo_model;
+pub(crate) mod user_model;
+```
+[^note] module name should be equal to the corresponding file name
+
+`pub` keyword is used to define define `visibility` of types in rust.
+In this case we want our models to be available outside the `models` 
+directory so we need `pub` for that. `pub(crate)` does that same thing but 
+it limits visibilty to this particular crate only. This is not actually required here,
+but, in case we were building our crate as a library, and we don't want people using our crate in their project modify or see some aspects of our code, its quite handy.
+
 

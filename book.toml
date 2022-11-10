@@ -3,4 +3,19 @@ authors = ["manishsingh10895"]
 language = "en"
 multilingual = false
 src = "src"
-title = "Learning rust by building a unnecessarily complex Todo CLI"
+title = "Learning rust by building an unnecessarily complex Todo CLI"
+
+
+[rust]
+edition = "2018"
+
+[preprocessor]
+
+[preprocessor.admonish]
+command = "mdbook-admonish"
+assets_version = "2.0.0" # do not edit: managed by `mdbook-admonish install`
+
+[output]
+
+[output.html]
+additional-css = ['.\.\mdbook-admonish.css']
