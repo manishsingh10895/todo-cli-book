@@ -151,11 +151,11 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#authentication-request-handlers" id="authentication-request-handlers">Authentication Request Handlers</a></h1>
-<p>Our server is up and running. So how about we first secure our APIs. </p>
+<p>Our server is up and running. So how about we first secure our APIs.</p>
 <h2><a class="header" href="#routerequest-handlers" id="routerequest-handlers">Route/Request Handlers</a></h2>
 <p>In <code>actix_web</code> every <code>route</code> needs to have a <a href="https://actix.rs/actix-web/actix_web/trait.Handler.html"><code>request handler</code></a>, in the
-<a href="init_api.html#creating-a-server">last section</a> we created a simple <code>route handler</code> using a <code>closure</code>. 
-For more sophisticated handlers we can create a function and use it. </p>
+<a href="init_api.html#creating-a-server">last section</a> we created a simple <code>route handler</code> using a <code>closure</code>.
+For more sophisticated handlers we can create a function and use it.</p>
 <pre><code class="language-admonishexample">```rust
 use actix_web;
 async fn hello() -&gt; actix_web::HttpResponse {
@@ -170,7 +170,7 @@ async fn hello() -&gt; actix_web::HttpResponse {
 ...
 ```
 </code></pre>
-<p>A <code>request handler</code> function takes any incoming data like <code>query params</code>, <code>AppData</code> and returns aything that can be converted to 
+<p>A <code>request handler</code> function takes any incoming data like <code>query params</code>, <code>AppData</code> and returns aything that can be converted to
 <code>HttpResponse</code> and if the handler can produce errors, return signature changes.</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
@@ -179,7 +179,7 @@ async fn hello() -&gt; actix_web::HttpResponse {
 ...
 <span class="boring">}
 </span></code></pre></pre>
-<p><code>actix_web</code> also makes it easier for us to define new routes using an <code>attribute macro</code> <code>route</code>, instead of using <code>.route()</code> we can define our routes as </p>
+<p><code>actix_web</code> also makes it easier for us to define new routes using an <code>attribute macro</code> <code>route</code>, instead of using <code>.route()</code> we can define our routes as</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
@@ -189,9 +189,9 @@ async fn hello() -&gt; actix_web::HttpResponse {
 </span></code></pre></pre>
 <h3><a class="header" href="#creating-dtos-for-request-handlers" id="creating-dtos-for-request-handlers">Creating DTOs for request handlers</a></h3>
 <p>For satisfying rust's type safety, we need to create new types for incoming body for our requests such as</p>
-<pre><code class="language-json">{ 
-    &quot;email&quot;: &quot;example@example.com&quot;,
-    &quot;password&quot;: &quot;supersecureone&quot;
+<pre><code class="language-json">{
+  &quot;email&quot;: &quot;example@example.com&quot;,
+  &quot;password&quot;: &quot;supersecureone&quot;
 }
 </code></pre>
 <p>these types can generally be called <code>DTOs</code> short for Data Transfer Object</p>
@@ -247,12 +247,12 @@ mod dtos;
 <p>Here's an easy flowchart explaining what our signup process would look like</p>
 <p><img src="images/signup-dfd.jpg" alt="Signup Process" /></p>
 <p>Few important functionalities, which are not implemented yet are <strong>hashing password</strong> and <strong>creating/encoding a JWT token</strong></p>
-<p>You can read more about <a href="https://jwt.io"><code>JWT</code></a>, basically they are encoded strings which contain useful information about a logged 
-in user and helps us verify users' identity. Our client needs to store this token on login/sigup and send the token back to server 
-on every request containing user specific or sensitive data. </p>
+<p>You can read more about <a href="https://jwt.io"><code>JWT</code></a>, basically they are encoded strings which contain useful information about a logged
+in user and helps us verify users' identity. Our client needs to store this token on login/sigup and send the token back to server
+on every request containing user specific or sensitive data.</p>
 <h3><a class="header" href="#hashing-password" id="hashing-password">Hashing Password</a></h3>
-<p>We hash passwords so that no can read the plain text version or recover the plain text from any encrypted text. </p>
-<p>We'll be using a rust crate <a href="https://docs.rs/rust-argon2/latest/argon2/"><code>argon2</code></a> to do the hashing for us. </p>
+<p>We hash passwords so that no can read the plain text version or recover the plain text from any encrypted text.</p>
+<p>We'll be using a rust crate <a href="https://docs.rs/rust-argon2/latest/argon2/"><code>argon2</code></a> to do the hashing for us.</p>
 
                     </main>
 

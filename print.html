@@ -680,11 +680,11 @@ pub async fn start_server() -&gt; std::io::Result&lt;()&gt; {
 </span></code></pre></pre>
 <h1><a class="header" href="#api-errors" id="api-errors">API Errors</a></h1>
 <p>Before going on to create request handlers, we must consider that for any reason our APIs may produce an error, and error handling
-is a big part in creating a API server. User's need to be sent relevant error messages for any errors and so does our server needs to log 
-required details about any particular error. </p>
+is a big part in creating a API server. User's need to be sent relevant error messages for any errors and so does our server needs to log
+required details about any particular error.</p>
 <p>Here we will look at one approach towards handling those nifty errors.</p>
 <h3><a class="header" href="#structuring-our-api-errors" id="structuring-our-api-errors">Structuring our API Errors</a></h3>
-<p>As the book's title says <strong>Unnecessarily Complex</strong>, we are going to make these error <code>enums</code> a little bit granular </p>
+<p>As the book's title says <strong>Unnecessarily Complex</strong>, we are going to make these error <code>enums</code> a little bit granular</p>
 <ul>
 <li><code>AuthError</code> for handling <strong>Authentication Errors</strong> in API</li>
 <li><code>TodoApiError</code> for handling all <strong>Api Errors</strong></li>
@@ -692,9 +692,9 @@ required details about any particular error. </p>
 </ul>
 <p><img src="images/errors.png" alt="Errors Structure" /></p>
 <p>Here we will implement <code>AuthError</code> and <code>TodoApiError</code> and leave <code>TodoError</code> for when we are finished with our APIs</p>
-<h3><a class="header" href="#error-enum-for-authentication-errors" id="error-enum-for-authentication-errors">Error Enum for Authentication Errors</a></h3>
+<h2><a class="header" href="#error-enum-for-authentication-errors" id="error-enum-for-authentication-errors">Error Enum for Authentication Errors</a></h2>
 <p>Create a new file <code>src/api/errors.rs</code>.</p>
-<p>Now we'll create a new <code>enum</code> <code>AuthError</code> for possible Authentication errors </p>
+<p>Now we'll create a new <code>enum</code> <code>AuthError</code> for possible Authentication errors</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
@@ -703,19 +703,19 @@ pub enum AuthError {
     Claims(serde_json::Error),
     ///Token is invalid
     InvalidToken,
-    /// Authorization header is not provided by requesting client 
+    /// Authorization header is not provided by requesting client
     NoAuthorizationHeader,
-    /// Authorization header is not of the format `Bearer {token}` 
+    /// Authorization header is not of the format `Bearer {token}`
     InvalidAuthorizationHeader,
     /// Jwt token expired
     TokenExpired,
-    
+
     Unauthorized,
 }
 <span class="boring">}
 </span></code></pre></pre>
 <p><code>Claims</code> value is for handling <code>JWT</code> encoding, decoding errors which we look upon later, but all others are quite self explanatory. Right ?</p>
-<p>We have our enum ready, but to render useful text from them, we need to implement <a href="https://doc.rust-lang.org/std/fmt/trait.Display.html"><code>std::fmt::Display</code></a> trait for it, which will deduce a relevant string from any <code>AuthError</code> value when converted to <code>String</code>. </p>
+<p>We have our enum ready, but to render useful text from them, we need to implement <a href="https://doc.rust-lang.org/std/fmt/trait.Display.html"><code>std::fmt::Display</code></a> trait for it, which will deduce a relevant string from any <code>AuthError</code> value when converted to <code>String</code>.</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
@@ -735,13 +735,122 @@ pub enum AuthError {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h3><a class="header" href="#encompassing-autherror-in-todoapierror" id="encompassing-autherror-in-todoapierror">Encompassing AuthError in TodoApiError</a></h3>
+<h3><a class="header" href="#handling-jwt-errors-for-autherror" id="handling-jwt-errors-for-autherror">Handling <code>jwt</code> errors for AuthError</a></h3>
+<p>Our Authentication flow required encoding and decoding <code>jwt</code> tokens, and multiple errors can
+occur during this process. To handle those errors we can impl
+trait <a href="https://doc.rust-lang.org/std/convert/trait.From.html"><code>From</code></a> to convert jwt errors to <code>AuthError</code></p>
+<p><code>From</code> and <code>Into</code> are two traits which help in converting a value from one type to another, and requires
+explicit implementation. Rust advises us to implement <code>From</code> trait instead of <code>Into</code>, but implementing
+both will do the same thing.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>use jsonwebtoken::errors::ErrorKind;
+
+impl From&lt;jsonwebtoken::errors::Error&gt; for AuthError {
+    fn from(err: jsonwebtoken::errors::Error) -&gt; Self {
+        //err.into_kind() converts error into an
+        // enum which describes what kind of error occured
+
+        // We can handle each `error_kind` individually, but for
+        // now we will just handle a few
+        match err.into_kind() {
+            ErrorKind::ExpiredSignature =&gt; AuthError::TokenExpired,
+            _ =&gt; AuthError::InvalidToken,
+        }
+    }
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<h2><a class="header" href="#encompassing-autherror-in-todoapierror" id="encompassing-autherror-in-todoapierror">Encompassing AuthError in TodoApiError</a></h2>
+<h3><a class="header" href="#creating-todoapierror-enum" id="creating-todoapierror-enum">Creating <code>TodoApiError</code> enum</a></h3>
+<p>We will create an <code>enum</code> which will represent <code>API</code> specific errors.
+For this app the following one will suffice and is self decriptive.</p>
+<p>Instead of using <code>std::fmt::Display</code> to represent <code>enum</code> value as string we are now using a new crate
+<code>derive_more</code>, specifically <code>derive_more::Display</code> macro which helps us to write concise code not explicitly
+impl <code>std::fmt::Display</code> trait.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>#[derive(Debug, derive_more::Display)]
+pub enum TodoApiError {
+    #[display(fmt = &quot;Internal Server Error&quot;)]
+    InternalServerError,
+
+    #[display(fmt = &quot;BadRequest: {}&quot;, _0)]
+    BadRequest(String),
+
+    #[display(fmt = &quot;Database Connection Error&quot;)]
+    DatabaseConnectionError,
+
+    #[display(fmt = &quot;Authentication Error :{}&quot;, _0)]
+    AuthError(AuthError),
+
+    #[display(fmt = &quot;{} Not Found&quot;, _0)]
+    NotFound(String),
+}
+<span class="boring">}
+</span></code></pre></pre>
+<blockquote>
+<p><code>_0</code> represents the first argument</p>
+</blockquote>
+<h3><a class="header" href="#implementing-responseerror-for-todoapierror" id="implementing-responseerror-for-todoapierror">Implementing <code>ResponseError</code> for TodoApiError</a></h3>
+<p>We need to implement <code>actix_web::ResponseError</code> for our enum so that on an error out API can return relevant
+error message and status codes.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>impl ResponseError for TodoApiError {
+    /// Return error specific http status code
+    fn status_code(&amp;self) -&gt; actix_web::http::StatusCode {
+        match self {
+            TodoApiError::InternalServerError =&gt; http::StatusCode::INTERNAL_SERVER_ERROR,
+            TodoApiError::AuthError(_) =&gt; http::StatusCode::UNAUTHORIZED,
+            TodoApiError::BadRequest(_) =&gt; http::StatusCode::BAD_REQUEST,
+            TodoApiError::NotFound(_) =&gt; http::StatusCode::NOT_FOUND,
+            _ =&gt; http::StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+
+    /// Returns error message as an API response
+    fn error_response(&amp;self) -&gt; HttpResponse&lt;actix_web::body::BoxBody&gt; {
+        let mut res = HttpResponse::new(self.status_code());
+
+        res.headers_mut().append(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static(&quot;application/json&quot;),
+        );
+
+        // self.to_string() here is using the derive_more::Display macro to convert
+        //our enum to a string value
+        res.set_body(BoxBody::new(json!({&quot;error&quot;: self.to_string()}).to_string()))
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<h3><a class="header" href="#converting-enum-to-httpresponse" id="converting-enum-to-httpresponse">Converting enum to HttpResponse</a></h3>
+<p>Now that we have implmented <code>ResponseError</code> we can create a function to return the error_response created
+above.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>impl TodoApiError {
+    pub fn to_response(&amp;self) -&gt; HttpResponse {
+        self.error_response()
+    }
+}
+
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#authentication-request-handlers" id="authentication-request-handlers">Authentication Request Handlers</a></h1>
-<p>Our server is up and running. So how about we first secure our APIs. </p>
+<p>Our server is up and running. So how about we first secure our APIs.</p>
 <h2><a class="header" href="#routerequest-handlers" id="routerequest-handlers">Route/Request Handlers</a></h2>
 <p>In <code>actix_web</code> every <code>route</code> needs to have a <a href="https://actix.rs/actix-web/actix_web/trait.Handler.html"><code>request handler</code></a>, in the
-<a href="init_api.html#creating-a-server">last section</a> we created a simple <code>route handler</code> using a <code>closure</code>. 
-For more sophisticated handlers we can create a function and use it. </p>
+<a href="init_api.html#creating-a-server">last section</a> we created a simple <code>route handler</code> using a <code>closure</code>.
+For more sophisticated handlers we can create a function and use it.</p>
 <pre><code class="language-admonishexample">```rust
 use actix_web;
 async fn hello() -&gt; actix_web::HttpResponse {
@@ -756,7 +865,7 @@ async fn hello() -&gt; actix_web::HttpResponse {
 ...
 ```
 </code></pre>
-<p>A <code>request handler</code> function takes any incoming data like <code>query params</code>, <code>AppData</code> and returns aything that can be converted to 
+<p>A <code>request handler</code> function takes any incoming data like <code>query params</code>, <code>AppData</code> and returns aything that can be converted to
 <code>HttpResponse</code> and if the handler can produce errors, return signature changes.</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
@@ -765,7 +874,7 @@ async fn hello() -&gt; actix_web::HttpResponse {
 ...
 <span class="boring">}
 </span></code></pre></pre>
-<p><code>actix_web</code> also makes it easier for us to define new routes using an <code>attribute macro</code> <code>route</code>, instead of using <code>.route()</code> we can define our routes as </p>
+<p><code>actix_web</code> also makes it easier for us to define new routes using an <code>attribute macro</code> <code>route</code>, instead of using <code>.route()</code> we can define our routes as</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
@@ -775,9 +884,9 @@ async fn hello() -&gt; actix_web::HttpResponse {
 </span></code></pre></pre>
 <h3><a class="header" href="#creating-dtos-for-request-handlers" id="creating-dtos-for-request-handlers">Creating DTOs for request handlers</a></h3>
 <p>For satisfying rust's type safety, we need to create new types for incoming body for our requests such as</p>
-<pre><code class="language-json">{ 
-    &quot;email&quot;: &quot;example@example.com&quot;,
-    &quot;password&quot;: &quot;supersecureone&quot;
+<pre><code class="language-json">{
+  &quot;email&quot;: &quot;example@example.com&quot;,
+  &quot;password&quot;: &quot;supersecureone&quot;
 }
 </code></pre>
 <p>these types can generally be called <code>DTOs</code> short for Data Transfer Object</p>
@@ -833,12 +942,12 @@ mod dtos;
 <p>Here's an easy flowchart explaining what our signup process would look like</p>
 <p><img src="images/signup-dfd.jpg" alt="Signup Process" /></p>
 <p>Few important functionalities, which are not implemented yet are <strong>hashing password</strong> and <strong>creating/encoding a JWT token</strong></p>
-<p>You can read more about <a href="https://jwt.io"><code>JWT</code></a>, basically they are encoded strings which contain useful information about a logged 
-in user and helps us verify users' identity. Our client needs to store this token on login/sigup and send the token back to server 
-on every request containing user specific or sensitive data. </p>
+<p>You can read more about <a href="https://jwt.io"><code>JWT</code></a>, basically they are encoded strings which contain useful information about a logged
+in user and helps us verify users' identity. Our client needs to store this token on login/sigup and send the token back to server
+on every request containing user specific or sensitive data.</p>
 <h3><a class="header" href="#hashing-password" id="hashing-password">Hashing Password</a></h3>
-<p>We hash passwords so that no can read the plain text version or recover the plain text from any encrypted text. </p>
-<p>We'll be using a rust crate <a href="https://docs.rs/rust-argon2/latest/argon2/"><code>argon2</code></a> to do the hashing for us. </p>
+<p>We hash passwords so that no can read the plain text version or recover the plain text from any encrypted text.</p>
+<p>We'll be using a rust crate <a href="https://docs.rs/rust-argon2/latest/argon2/"><code>argon2</code></a> to do the hashing for us.</p>
 
                     </main>
 
