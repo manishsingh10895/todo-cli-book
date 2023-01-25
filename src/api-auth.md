@@ -1,4 +1,4 @@
-# Authentication Request Handlers
+# Authentication Process
 
 Our server is up and running. So how about we first secure our APIs.
 
@@ -103,14 +103,17 @@ Here's an easy flowchart explaining what our signup process would look like
 
 ![Signup Process](images/signup-dfd.jpg)
 
-Few important functionalities, which are not implemented yet are **hashing password** and **creating/encoding a JWT token**
+## Login process
+
+Login process is quite similar to signup and would look like
+
+![Login Process](images/login-dfd.jpg)
+
+Few important utility functions, which are not implemented yet are **hashing password**
+and **creating/encoding a JWT token**
 
 You can read more about [`JWT`](https://jwt.io), basically they are encoded strings which contain useful information about a logged
 in user and helps us verify users' identity. Our client needs to store this token on login/sigup and send the token back to server
 on every request containing user specific or sensitive data.
 
-### Hashing Password
-
-We hash passwords so that no can read the plain text version or recover the plain text from any encrypted text.
-
-We'll be using a rust crate [`argon2`](https://docs.rs/rust-argon2/latest/argon2/) to do the hashing for us.
+Next we will implement these functions, before creating authentication route handlers

@@ -38,6 +38,8 @@ pub enum AuthError {
     TokenExpired,
 
     Unauthorized,
+
+    InvalidPassword
 }
 ```
 
@@ -51,6 +53,9 @@ impl std::fmt::Display for AuthError {
         match self {
             Self::InvalidAuthorizationHeader => {
                 write!(f, "Authorization header is not in valid format ")
+            }
+            Self::InvalidPassword => {
+                write!(f, "Invalid Password provided")
             }
             Self::NoAuthorizationHeader => write!(f, "No Authorization Header"),
             Self::Claims(e) => write!(f, "Error while Deserializing JWT: {}", e),
@@ -161,7 +166,7 @@ impl ResponseError for TodoApiError {
 
 ### Converting enum to HttpResponse
 
-Now that we have implmented `ResponseError` we can create a function to return the error_response created
+Now that we have implmented `ResponseError` we can create a function to return the `error_response` created
 above.
 
 ```rust
@@ -173,3 +178,72 @@ impl TodoApiError {
 }
 
 ```
+
+## Handling errors from other parts of our API
+
+As we have handled conversion from `jwt` error to `AuthError` we can handle further
+conversions for our `TodoApiError` enum for a fine grained control on our error responses
+
+### Conversion from AuthError
+
+Further in the book we will create utility functions to encode and decode tokens, which will return `AuthError`, rather
+than handle conversion there, we can simply handle them here
+
+```rust
+
+impl From<AuthError> for TodoApiError {
+    fn from(value: AuthError) -> Self {
+        match value {
+            _ => TodoApiError::AuthError(value),
+        }
+    }
+}
+
+```
+
+### Conversion From r2d2 errors
+
+We are using `r2d2` for managing our database connections, and as life tells us, `No connection is infallible`.
+So let's handle that
+
+```rust
+ /// We are not delving deeper into these specific errors, rather returning `DatabaseConnectionError`
+ /// for all the r2d2 errors
+impl From<r2d2::Error> for TodoApiError {
+    fn from(_: r2d2::Error) -> Self {
+        TodoApiError::DatabaseConnectionError
+    }
+}
+
+```
+
+### Conversion from diesel errors
+
+`diesel` can also throw different errors depending on database queries, like `ForiegnKeyViolation` or `UniqueViolation`. We
+can handle some here
+
+```rust
+
+impl From<DBError> for TodoApiError {
+    fn from(error: DBError) -> Self {
+        match error {
+            DBError::DatabaseError(kind, info) => {
+                if let DatabaseErrorKind::UniqueViolation = kind {
+                    let message: String =
+                        info.details().unwrap_or_else(|| info.message()).to_string();
+
+                    let message = format!("DatabaseError: {}", message);
+
+                    return TodoApiError::BadRequest(message);
+                }
+                // On a database error, we don't necessarily need out client to know, it was
+                // an error related to database
+                TodoApiError::InternalServerError
+            }
+            _ => TodoApiError::InternalServerError,
+        }
+    }
+}
+```
+
+> This was quite exhaustive handling errors right? Further in the book we will learn what benefits we got by doing this.
