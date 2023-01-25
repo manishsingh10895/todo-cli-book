@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div id="sidebar-scrollbox" class="sidebar-scrollbox">
-                <ol class="chapter"><li class="expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="expanded "><a href="initialize.html"><strong aria-hidden="true">2.</strong> Initializing the project</a></li><li class="expanded "><a href="database.html"><strong aria-hidden="true">3.</strong> Building database models</a></li><li><ol class="section"><li class="expanded "><a href="models.html"><strong aria-hidden="true">3.1.</strong> Models as structs</a></li><li class="expanded "><a href="database-connection.html"><strong aria-hidden="true">3.2.</strong> Creating a connection to our database</a></li></ol></li><li class="expanded "><a href="init_api.html"><strong aria-hidden="true">4.</strong> Building Todo API</a></li><li><ol class="section"><li class="expanded "><a href="api-errors.html" class="active"><strong aria-hidden="true">4.1.</strong> API Errors</a></li><li class="expanded "><a href="api-auth.html"><strong aria-hidden="true">4.2.</strong> Authentication Handlers</a></li></ol></li></ol>
+                <ol class="chapter"><li class="expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="expanded "><a href="initialize.html"><strong aria-hidden="true">2.</strong> Initializing the project</a></li><li class="expanded "><a href="database.html"><strong aria-hidden="true">3.</strong> Building database models</a></li><li><ol class="section"><li class="expanded "><a href="models.html"><strong aria-hidden="true">3.1.</strong> Models as structs</a></li><li class="expanded "><a href="database-connection.html"><strong aria-hidden="true">3.2.</strong> Creating a connection to our database</a></li></ol></li><li class="expanded "><a href="init_api.html"><strong aria-hidden="true">4.</strong> Building Todo API</a></li><li><ol class="section"><li class="expanded "><a href="api-errors.html" class="active"><strong aria-hidden="true">4.1.</strong> API Errors</a></li><li class="expanded "><a href="api-auth.html"><strong aria-hidden="true">4.2.</strong> Authentication</a></li><li class="expanded "><a href="auth-utils.html"><strong aria-hidden="true">4.3.</strong> Authentication Utilities</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -183,6 +183,8 @@ pub enum AuthError {
     TokenExpired,
 
     Unauthorized,
+
+    InvalidPassword
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -196,6 +198,9 @@ pub enum AuthError {
         match self {
             Self::InvalidAuthorizationHeader =&gt; {
                 write!(f, &quot;Authorization header is not in valid format &quot;)
+            }
+            Self::InvalidPassword =&gt; {
+                write!(f, &quot;Invalid Password provided&quot;)
             }
             Self::NoAuthorizationHeader =&gt; write!(f, &quot;No Authorization Header&quot;),
             Self::Claims(e) =&gt; write!(f, &quot;Error while Deserializing JWT: {}&quot;, e),
@@ -303,7 +308,7 @@ error message and status codes.</p>
 <span class="boring">}
 </span></code></pre></pre>
 <h3><a class="header" href="#converting-enum-to-httpresponse" id="converting-enum-to-httpresponse">Converting enum to HttpResponse</a></h3>
-<p>Now that we have implmented <code>ResponseError</code> we can create a function to return the error_response created
+<p>Now that we have implmented <code>ResponseError</code> we can create a function to return the <code>error_response</code> created
 above.</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
@@ -317,6 +322,74 @@ above.</p>
 
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#handling-errors-from-other-parts-of-our-api" id="handling-errors-from-other-parts-of-our-api">Handling errors from other parts of our API</a></h2>
+<p>As we have handled conversion from <code>jwt</code> error to <code>AuthError</code> we can handle further
+conversions for our <code>TodoApiError</code> enum for a fine grained control on our error responses</p>
+<h3><a class="header" href="#conversion-from-autherror" id="conversion-from-autherror">Conversion from AuthError</a></h3>
+<p>Further in the book we will create utility functions to encode and decode tokens, which will return <code>AuthError</code>, rather
+than handle conversion there, we can simply handle them here</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>impl From&lt;AuthError&gt; for TodoApiError {
+    fn from(value: AuthError) -&gt; Self {
+        match value {
+            _ =&gt; TodoApiError::AuthError(value),
+        }
+    }
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<h3><a class="header" href="#conversion-from-r2d2-errors" id="conversion-from-r2d2-errors">Conversion From r2d2 errors</a></h3>
+<p>We are using <code>r2d2</code> for managing our database connections, and as life tells us, <code>No connection is infallible</code>.
+So let's handle that</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span> /// We are not delving deeper into these specific errors, rather returning `DatabaseConnectionError`
+ /// for all the r2d2 errors
+impl From&lt;r2d2::Error&gt; for TodoApiError {
+    fn from(_: r2d2::Error) -&gt; Self {
+        TodoApiError::DatabaseConnectionError
+    }
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<h3><a class="header" href="#conversion-from-diesel-errors" id="conversion-from-diesel-errors">Conversion from diesel errors</a></h3>
+<p><code>diesel</code> can also throw different errors depending on database queries, like <code>ForiegnKeyViolation</code> or <code>UniqueViolation</code>. We
+can handle some here</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>impl From&lt;DBError&gt; for TodoApiError {
+    fn from(error: DBError) -&gt; Self {
+        match error {
+            DBError::DatabaseError(kind, info) =&gt; {
+                if let DatabaseErrorKind::UniqueViolation = kind {
+                    let message: String =
+                        info.details().unwrap_or_else(|| info.message()).to_string();
+
+                    let message = format!(&quot;DatabaseError: {}&quot;, message);
+
+                    return TodoApiError::BadRequest(message);
+                }
+                // On a database error, we don't necessarily need out client to know, it was
+                // an error related to database
+                TodoApiError::InternalServerError
+            }
+            _ =&gt; TodoApiError::InternalServerError,
+        }
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<blockquote>
+<p>This was quite exhaustive handling errors right? Further in the book we will learn what benefits we got by doing this.</p>
+</blockquote>
 
                     </main>
 

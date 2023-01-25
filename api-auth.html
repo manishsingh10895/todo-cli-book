@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Authentication Handlers - Learning rust by building an unnecessarily complex Todo CLI</title>
+        <title>Authentication - Learning rust by building an unnecessarily complex Todo CLI</title>
         
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div id="sidebar-scrollbox" class="sidebar-scrollbox">
-                <ol class="chapter"><li class="expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="expanded "><a href="initialize.html"><strong aria-hidden="true">2.</strong> Initializing the project</a></li><li class="expanded "><a href="database.html"><strong aria-hidden="true">3.</strong> Building database models</a></li><li><ol class="section"><li class="expanded "><a href="models.html"><strong aria-hidden="true">3.1.</strong> Models as structs</a></li><li class="expanded "><a href="database-connection.html"><strong aria-hidden="true">3.2.</strong> Creating a connection to our database</a></li></ol></li><li class="expanded "><a href="init_api.html"><strong aria-hidden="true">4.</strong> Building Todo API</a></li><li><ol class="section"><li class="expanded "><a href="api-errors.html"><strong aria-hidden="true">4.1.</strong> API Errors</a></li><li class="expanded "><a href="api-auth.html" class="active"><strong aria-hidden="true">4.2.</strong> Authentication Handlers</a></li></ol></li></ol>
+                <ol class="chapter"><li class="expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="expanded "><a href="initialize.html"><strong aria-hidden="true">2.</strong> Initializing the project</a></li><li class="expanded "><a href="database.html"><strong aria-hidden="true">3.</strong> Building database models</a></li><li><ol class="section"><li class="expanded "><a href="models.html"><strong aria-hidden="true">3.1.</strong> Models as structs</a></li><li class="expanded "><a href="database-connection.html"><strong aria-hidden="true">3.2.</strong> Creating a connection to our database</a></li></ol></li><li class="expanded "><a href="init_api.html"><strong aria-hidden="true">4.</strong> Building Todo API</a></li><li><ol class="section"><li class="expanded "><a href="api-errors.html"><strong aria-hidden="true">4.1.</strong> API Errors</a></li><li class="expanded "><a href="api-auth.html" class="active"><strong aria-hidden="true">4.2.</strong> Authentication</a></li><li class="expanded "><a href="auth-utils.html"><strong aria-hidden="true">4.3.</strong> Authentication Utilities</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -150,7 +150,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#authentication-request-handlers" id="authentication-request-handlers">Authentication Request Handlers</a></h1>
+                        <h1><a class="header" href="#authentication-process" id="authentication-process">Authentication Process</a></h1>
 <p>Our server is up and running. So how about we first secure our APIs.</p>
 <h2><a class="header" href="#routerequest-handlers" id="routerequest-handlers">Route/Request Handlers</a></h2>
 <p>In <code>actix_web</code> every <code>route</code> needs to have a <a href="https://actix.rs/actix-web/actix_web/trait.Handler.html"><code>request handler</code></a>, in the
@@ -246,13 +246,15 @@ mod dtos;
 <h2><a class="header" href="#signup-process" id="signup-process">Signup process</a></h2>
 <p>Here's an easy flowchart explaining what our signup process would look like</p>
 <p><img src="images/signup-dfd.jpg" alt="Signup Process" /></p>
-<p>Few important functionalities, which are not implemented yet are <strong>hashing password</strong> and <strong>creating/encoding a JWT token</strong></p>
+<h2><a class="header" href="#login-process" id="login-process">Login process</a></h2>
+<p>Login process is quite similar to signup and would look like</p>
+<p><img src="images/login-dfd.jpg" alt="Login Process" /></p>
+<p>Few important utility functions, which are not implemented yet are <strong>hashing password</strong>
+and <strong>creating/encoding a JWT token</strong></p>
 <p>You can read more about <a href="https://jwt.io"><code>JWT</code></a>, basically they are encoded strings which contain useful information about a logged
 in user and helps us verify users' identity. Our client needs to store this token on login/sigup and send the token back to server
 on every request containing user specific or sensitive data.</p>
-<h3><a class="header" href="#hashing-password" id="hashing-password">Hashing Password</a></h3>
-<p>We hash passwords so that no can read the plain text version or recover the plain text from any encrypted text.</p>
-<p>We'll be using a rust crate <a href="https://docs.rs/rust-argon2/latest/argon2/"><code>argon2</code></a> to do the hashing for us.</p>
+<p>Next we will implement these functions, before creating authentication route handlers</p>
 
                     </main>
 
@@ -264,6 +266,10 @@ on every request containing user specific or sensitive data.</p>
                             </a>
                         
 
+                        
+                            <a rel="next" href="auth-utils.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
                         
 
                         <div style="clear: both"></div>
@@ -278,6 +284,10 @@ on every request containing user specific or sensitive data.</p>
                     </a>
                 
 
+                
+                    <a href="auth-utils.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
                 
             </nav>
 

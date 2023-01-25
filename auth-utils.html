@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Models as structs - Learning rust by building an unnecessarily complex Todo CLI</title>
+        <title>Authentication Utilities - Learning rust by building an unnecessarily complex Todo CLI</title>
         
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div id="sidebar-scrollbox" class="sidebar-scrollbox">
-                <ol class="chapter"><li class="expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="expanded "><a href="initialize.html"><strong aria-hidden="true">2.</strong> Initializing the project</a></li><li class="expanded "><a href="database.html"><strong aria-hidden="true">3.</strong> Building database models</a></li><li><ol class="section"><li class="expanded "><a href="models.html" class="active"><strong aria-hidden="true">3.1.</strong> Models as structs</a></li><li class="expanded "><a href="database-connection.html"><strong aria-hidden="true">3.2.</strong> Creating a connection to our database</a></li></ol></li><li class="expanded "><a href="init_api.html"><strong aria-hidden="true">4.</strong> Building Todo API</a></li><li><ol class="section"><li class="expanded "><a href="api-errors.html"><strong aria-hidden="true">4.1.</strong> API Errors</a></li><li class="expanded "><a href="api-auth.html"><strong aria-hidden="true">4.2.</strong> Authentication</a></li><li class="expanded "><a href="auth-utils.html"><strong aria-hidden="true">4.3.</strong> Authentication Utilities</a></li></ol></li></ol>
+                <ol class="chapter"><li class="expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="expanded "><a href="initialize.html"><strong aria-hidden="true">2.</strong> Initializing the project</a></li><li class="expanded "><a href="database.html"><strong aria-hidden="true">3.</strong> Building database models</a></li><li><ol class="section"><li class="expanded "><a href="models.html"><strong aria-hidden="true">3.1.</strong> Models as structs</a></li><li class="expanded "><a href="database-connection.html"><strong aria-hidden="true">3.2.</strong> Creating a connection to our database</a></li></ol></li><li class="expanded "><a href="init_api.html"><strong aria-hidden="true">4.</strong> Building Todo API</a></li><li><ol class="section"><li class="expanded "><a href="api-errors.html"><strong aria-hidden="true">4.1.</strong> API Errors</a></li><li class="expanded "><a href="api-auth.html"><strong aria-hidden="true">4.2.</strong> Authentication</a></li><li class="expanded "><a href="auth-utils.html" class="active"><strong aria-hidden="true">4.3.</strong> Authentication Utilities</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -150,175 +150,212 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#models-as-structs" id="models-as-structs">Models as structs</a></h1>
-<p>Now as we have our <code>postgres</code> side setup and ready, its time now to integrate it with our rust project.</p>
-<p>We have already created a <code>src/models</code> directory, to reflect the tables in our database, we need to create two 
-<code>structs</code> in the directory for each table. So lets create them.</p>
-<p>Our <code>src/models</code> directory should look like this.</p>
-<pre><code class="language-bash">+---src/models
-|    +---mod.rs
-|    +---todo_model.rs
-|    +---user_model.rs
-</code></pre>
-<h3><a class="header" href="#user-model" id="user-model">User Model</a></h3>
-<p>Let's create our first struct, for <code>user</code> </p>
+                        <h1><a class="header" href="#authentication-utility-functions" id="authentication-utility-functions">Authentication Utility functions</a></h1>
+<p>We will be creating some utility functions for authentication, so better create a new file for it.
+<code>src/api/auth_utils.rs</code> and also add it to our api mod file <code>src/api/mod.rs</code></p>
+<h2><a class="header" href="#hashing-password-and-verifying" id="hashing-password-and-verifying">Hashing Password and Verifying</a></h2>
+<p>We hash passwords so that no can read the plain text version or recover the plain text from any encrypted text.</p>
+<p>We'll be using a rust crate <a href="https://docs.rs/rust-argon2/latest/argon2/"><code>argon2</code></a> to do the hashing for us.</p>
+<p><code>argon2</code> requires a <code>secret</code> and <code>salt</code> for hashing, these values are used to make our output hash more secure. <code>Secret</code>
+is not a required argument but its better for security to provide one.</p>
+<p><code>SECRET_KEY</code> should be a <code>byte slice</code> (<code>&amp;[u8]</code>). We can
+easily declare it above our functions as <code>const SECRET_KEY: &amp;'static [u8] = b&quot;onerepublic_secrets&quot;</code> but where's the
+complexity in that. We will load our <code>SECRET_KEY</code> from <code>.env</code> file we created earlier as it should be, we should never
+hard code security specific strings in our code NEVER!!.</p>
+<p>Rust doesn't allow our <code>const</code> values to be dynamic, as these values are needed to be known at compile time. We can create a function where it reads the dotenv file and gets the
+value but instead we will use another crate, <code>[lazy_static</code>](https://docs.rs/lazy_static/latest/lazy_static/). This crate
+provides us with a macro <code>lazy_static!</code> which can evaluate a value a run time and store it in memory.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>lazy_static::lazy_static! {
+    pub static ref SECRET_KEY: String = std::env::var(&quot;SECRET_KEY&quot;).unwrap_or_else(|_| &quot;SUPER_SECRET_KEY&quot;.repeat(8));
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<p>Now for out <code>salt</code>, we can also do the same thing, but as let's take the easier path now. We know the journey.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>const SALT: &amp;'static [u8] = b&quot;supersecuresalt&quot;;
+
+<span class="boring">}
+</span></code></pre></pre>
+<h3><a class="header" href="#hashing" id="hashing">Hashing</a></h3>
+<p>With all that in place we can create our <code>hashing function</code> and this function will output a hash which will be stored in
+the database</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>/// Hash a password, to secure
+pub fn hash_password(password: &amp;str) -&gt; Result&lt;String, TodoApiError&gt; {
+    let config = Config {
+        secret: SECRET_KEY.as_bytes(), // SECRET_KEY is a String, we need to convert it to bytes
+        ..Default::default()
+    };
+
+    argon2::hash_encoded(password.as_bytes(), &amp;SALT, &amp;config).map_err(|err| {
+        dbg!(err);
+        TodoApiError::InternalServerError
+    })
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>map_err</code> function takes a closure and allows us to return a different error if we need. Here we are return <code>InternalServerError</code>
+for any error that occurs while hashing and also printing it using <code>dbg!</code> macro</p>
+<h3><a class="header" href="#verifying-hashes" id="verifying-hashes">Verifying hashes</a></h3>
+<p>When a user logs in, the user will enter the password in plain text and we need to verify that the hash stored in our
+database matches the hash of the provided <strong>plain text password</strong>.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>/// Verify password and hash are equal
+pub fn verify_hash(hash: &amp;str, password: &amp;str) -&gt; Result&lt;bool, TodoApiError&gt; {
+    argon2::verify_encoded_ext(hash, password.as_bytes(), SECRET_KEY.as_bytes(), &amp;[]).map_err(
+        |err| {
+            dbg!(err);
+            TodoApiError::AuthError(crate::api::errors::AuthError::InvalidPassword)
+        },
+    )
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<blockquote>
+<p><code>argon2::verify_encoded_ext</code> functions equates hash against the plain text password. If
+the password doesn't match or there's some other kind of error we will return <code>AuthError::InvalidPassword</code></p>
+</blockquote>
+<h2><a class="header" href="#jwt-tokens" id="jwt-tokens">Jwt Tokens</a></h2>
+<p>We will returning <code>jwt</code> tokens on succesfull <strong>login</strong> or <strong>signup</strong>. These tokens also
+require <code>encoding</code> and <code>decoding</code></p>
+<h3><a class="header" href="#encoding-tokens" id="encoding-tokens">Encoding Tokens</a></h3>
+<p>Before we start encoding and decoding, we need to consider rust's type safety.
+First, we wil require a struct <code>SlimUser</code>, which will passed around our backend, containing,
+only non-sensitive and highly required data. Which in this case are users' <code>id</code> and <code>email</code></p>
+<p>Let's add the following to <code>src/models/user_model.rs</code></p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
-</span>//src/user_model.rs
-use super::{super::schema::*};
-use diesel::prelude::*;
-use diesel::{Insertable, Queryable};
-use serde::{Deserialize, Serialize};
-use uuid;
-
-#[derive(Debug, Deserialize, Serialize, Insertable, Queryable)]
-#[table_name = &quot;users&quot;]
-pub struct User {
-    pub id: uuid::Uuid, // using uuid to generate random and unique strings for id
+</span>pub struct SlimUser {
     pub email: String,
-    pub created_at: chrono::NaiveDateTime,
-    pub updated_at: chrono::NaiveDateTime,
-    pub password: String,
+    pub id: uuid::Uuid,
     pub name: String,
 }
-<span class="boring">}
-</span></code></pre></pre>
-<p>First and foremost , we are importing all the required modules, most important of which <code>use diesel::prelude::*</code>
-which contains all the required traits we will be using later</p>
-<p>This is a simple rust struct containing required field for a user, but on top there are two new things
-<code>#derive... and #[table_name = &quot;users&quot;]</code>, these both are <code>attributes</code> for the struct <code>User</code>. </p>
-<p>Our first <code>attributes</code> contains <code>#[derive...</code> in which <code>derive</code> is a macro which will write <code>impl</code> blocks 
-for us for the provided Traits, namely </p>
-<ul>
-<li><code>Debug</code>, helps in printing stuff to stdout easily</li>
-<li><code>Deserialize</code>, <code>Serialize</code> will help in [de]serialization for the struct in <code>json</code> as we implement our APIs</li>
-<li><code>Insertable</code>, <code>Queryable</code> are <a href="https://doc.rust-lang.org/book/ch10-02-traits.html"><code>Traits</code></a>, provided by 
-<code>diesel</code> which are required if we want to insert an instance of this struct in a table or query from table 
-respectively</li>
-</ul>
-<p><sup class="footnote-reference"><a href="#note">1</a></sup> <code>Queryable</code> trait requires the fields for the struct to be in the same order as generated in the <code>schema.rs</code>, so make sure both are in the same order.</p>
-<p>Second attribute, tells rust the name of the <code>table</code> where to insert/query </p>
-<p>Now, having a simple struct won't help us much right ? Lets simplify creating a new instance of <code>User</code> with a <code>method</code>.</p>
-<p>Creating methods for a struct is referred to as <code>implementing a struct</code> in rust. </p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
-</span><span class="boring">fn main() {
-</span>impl StructName {
-    ...methods 
-}
-<span class="boring">}
-</span></code></pre></pre>
-<p>Using this, we can create a function that will initialize our <code>struct</code> with a method, given required parameters. </p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
-</span><span class="boring">fn main() {
-</span>impl User {
-    pub fn from_details&lt;T: Into&lt;String&gt;&gt;(name: T, email: T, password: T) -&gt; User {
-        User {
-            email: email.into(),
-            password: password.into(),
-            id: uuid::Uuid::new_v4(),
-            name: name.into(),
-            created_at: chrono::Local::now().naive_local(),
-            updated_at: chrono::Local::now().naive_local(),
-        }
-    }
-}
-<span class="boring">}
-</span></code></pre></pre>
-<p>Something new again right, <code>T: Into&lt;String&gt;</code>, this syntax is called giving a <code>bound</code> to a generic paramerter which in this case is
-<code>T</code>, this make sure that any parameter provided of type <code>T</code> implements <code>Into&lt;String&gt;</code>. email, password and name are <code>String</code> fields
-in our struct <code>User</code>, we could have simply used <code>String</code> as <code>type</code> of parameters instead of T. Doing it this way, 
-we can pass any type which implements 
-<a href="https://doc.rust-lang.org/rust-by-example/conversion/from_into.html"><code>Into&lt;String&gt;</code></a> for eg: <code>&amp;str</code> and <code>String</code>. </p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
-</span><span class="boring">fn main() {
-</span>    User::from_details(name: &quot;john&quot;, ....
-    // OR 
-    User::from_details(name: String::from(&quot;john&quot;),....
 
-<span class="boring">}
-</span></code></pre></pre>
-<p><code>.into()</code> function will convert the value to the required type which in this case is <code>String</code>. </p>
-<h3><a class="header" href="#todo-model" id="todo-model">Todo Model</a></h3>
-<p>After creating <code>User</code>, <code>Todo</code> model is pretty simple </p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
-</span><span class="boring">fn main() {
-</span>// src/todo_model.rs
-
-use crate::schema::*;
-use diesel::{Insertable, Queryable};
-use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Serialize, Deserialize, Insertable, Queryable)]
-#[table_name = &quot;todos&quot;]
-pub struct Todo {
-    pub id: uuid::Uuid,
-    pub title: String,
-    pub completed: bool,
-    pub created_at: chrono::NaiveDateTime,
-    pub updated_at: chrono::NaiveDateTime,
-    pub user_id: uuid::Uuid,
-}
-<span class="boring">}
-</span></code></pre></pre>
-<p>And as only <code>title</code> and <code>user_id</code> are required to initialize a <code>todo</code> we can create a simple constructor function </p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
-</span><span class="boring">fn main() {
-</span>//src/todo_model.rs
-...
-
-impl Todo {
-    pub fn from(title: String, user_id: uuid::Uuid) -&gt; Self {
+// Implenting from to easily convert `User` to `SlimUser`
+impl From&lt;User&gt; for SlimUser {
+    fn from(user: User) -&gt; Self {
         Self {
-            id: uuid::Uuid::new_v4(),
-            completed: false,
-            title,
-            user_id,
-            created_at: chrono::Local::now().naive_local(),
-            updated_at: chrono::Local::now().naive_local(),
+            name: user.name,
+            email: user.email,
+            id: user.id,
         }
     }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Next, we will declare a <code>Claims</code> rust, which will represent the encoded <code>jwt</code> data. This
+is the data which will be encoded into a token with some extra data such as <code>expiry time</code></p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>#[derive(Debug, Deserialize, Serialize)]
+pub struct Claims {
+    pub email: String,
+    pub id: String,
+    #[serde(with = &quot;ts_seconds&quot;)] // a chrono attribute, which serializes `DateTime` to timestamps in `seconds`
+    pub exp: DateTime&lt;Utc&gt;, // chrono::DateTime, chrono::offset::Utc
 }
 
 <span class="boring">}
 </span></code></pre></pre>
-<h3><a class="header" href="#declaring-module" id="declaring-module">Declaring Module</a></h3>
-<p>Now that are models are setup, we can't use them just yet, they are available yet out side their respective files. Rust doesn't yet understand how the project is structured yet.</p>
-<p>We can rectify that easily using rust's simple module system. Remember the mod.rs file. We just need to tell rust that in our submodule <code>models</code> there the two other files <code>todo_model</code> and <code>user_model</code> </p>
+<blockquote>
+<p>This will allow rust to serialize and deserialize the encoded or decoded token</p>
+</blockquote>
+<p>Now we can go to our main functions</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>// use jsonwebtoken::{decode, decode_header, encode, DecodingKey, EncodingKey, Header, Validation};
+
+// Simple secret key
+const JWT_SECRET_KEY: &amp;'static [u8] = b&quot;secure jwt secret&quot;;
+
+pub fn encode_token(user: &amp;SlimUser) -&gt; Result&lt;String, AuthError&gt; {
+    Ok(encode::&lt;Claims&gt;(
+        &amp;Header::new(jsonwebtoken::Algorithm::HS256),
+        &amp;user.into(),
+        &amp;EncodingKey::from_secret(JWT_SECRET_KEY),
+    )?)
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<h3><a class="header" href="#decoding-tokens" id="decoding-tokens">Decoding Tokens</a></h3>
+<p>We have done most of our setup required in previous setup, so decoding tokens will be
+fairly simple.</p>
+<p>For authentication we will provided the encoded token in an http header, using the
+format <code>Bearer {token}</code>. So to ease our process, we will directly provide header
+in this function and extract the token's value</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
-</span>//src/models/mod.rs
-pub(crate) mod todo_model;
-pub(crate) mod user_model;
+</span>// use actix_web::http::header::HeaderValue;
+//  use serde_json::{from_value, Value};
+pub fn decode_token(auth_header: &amp;HeaderValue) -&gt; Result&lt;Claims, AuthError&gt; {
+    match auth_header.to_str() {
+        Ok(auth_header_string) =&gt; {
+            let token = auth_header_string.trim_start_matches(&quot;Bearer &quot;);
+
+            match decode_header(token) {
+                Ok(jwt_header) =&gt; {
+                    match decode::&lt;Value&gt;(
+                        token,
+                        &amp;DecodingKey::from_secret(JWT_SECRET_KEY),
+                        &amp;Validation::new(jwt_header.alg),
+                    ) {
+                        Ok(raw_token) =&gt; {
+                            let decoded = from_value::&lt;Claims&gt;(raw_token.claims.clone());
+
+                            match decoded {
+                                Ok(claims) =&gt; Ok(claims),
+                                Err(e) =&gt; Err(AuthError::Claims(e)),
+                            }
+                        }
+
+                        Err(_) =&gt; Err(AuthError::InvalidToken),
+                    }
+                }
+                Err(e) =&gt; {
+                    dbg!(e);
+                    Err(AuthError::InvalidToken)
+                }
+            }
+        }
+        Err(_) =&gt; Err(AuthError::InvalidAuthorizationHeader),
+    }
+}
 <span class="boring">}
 </span></code></pre></pre>
-<p><sup class="footnote-reference"><a href="#note">1</a></sup> module name should be equal to the corresponding file name</p>
-<p><code>pub</code> keyword is used to define define <code>visibility</code> of types in rust.
-In this case we want our models to be available outside the <code>models</code> 
-directory so we need <code>pub</code> for that. <code>pub(crate)</code> does that same thing but 
-it limits visibilty to this particular crate only. This is not actually required here,
-but, in case we were building our crate as a library, and we don't want people using our crate in their project modify or see some aspects of our code, its quite handy.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="database.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="api-auth.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
-                        
-                            <a rel="next" href="database-connection.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
                         
 
                         <div style="clear: both"></div>
@@ -328,15 +365,11 @@ but, in case we were building our crate as a library, and we don't want people u
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a href="database.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a href="api-auth.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
-                
-                    <a href="database-connection.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
                 
             </nav>
 

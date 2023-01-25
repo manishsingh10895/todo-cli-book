@@ -85,7 +85,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div id="sidebar-scrollbox" class="sidebar-scrollbox">
-                <ol class="chapter"><li class="expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="expanded "><a href="initialize.html"><strong aria-hidden="true">2.</strong> Initializing the project</a></li><li class="expanded "><a href="database.html"><strong aria-hidden="true">3.</strong> Building database models</a></li><li><ol class="section"><li class="expanded "><a href="models.html"><strong aria-hidden="true">3.1.</strong> Models as structs</a></li><li class="expanded "><a href="database-connection.html"><strong aria-hidden="true">3.2.</strong> Creating a connection to our database</a></li></ol></li><li class="expanded "><a href="init_api.html"><strong aria-hidden="true">4.</strong> Building Todo API</a></li><li><ol class="section"><li class="expanded "><a href="api-errors.html"><strong aria-hidden="true">4.1.</strong> API Errors</a></li><li class="expanded "><a href="api-auth.html"><strong aria-hidden="true">4.2.</strong> Authentication Handlers</a></li></ol></li></ol>
+                <ol class="chapter"><li class="expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="expanded "><a href="initialize.html"><strong aria-hidden="true">2.</strong> Initializing the project</a></li><li class="expanded "><a href="database.html"><strong aria-hidden="true">3.</strong> Building database models</a></li><li><ol class="section"><li class="expanded "><a href="models.html"><strong aria-hidden="true">3.1.</strong> Models as structs</a></li><li class="expanded "><a href="database-connection.html"><strong aria-hidden="true">3.2.</strong> Creating a connection to our database</a></li></ol></li><li class="expanded "><a href="init_api.html"><strong aria-hidden="true">4.</strong> Building Todo API</a></li><li><ol class="section"><li class="expanded "><a href="api-errors.html"><strong aria-hidden="true">4.1.</strong> API Errors</a></li><li class="expanded "><a href="api-auth.html"><strong aria-hidden="true">4.2.</strong> Authentication</a></li><li class="expanded "><a href="auth-utils.html"><strong aria-hidden="true">4.3.</strong> Authentication Utilities</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -711,6 +711,8 @@ pub enum AuthError {
     TokenExpired,
 
     Unauthorized,
+
+    InvalidPassword
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -724,6 +726,9 @@ pub enum AuthError {
         match self {
             Self::InvalidAuthorizationHeader =&gt; {
                 write!(f, &quot;Authorization header is not in valid format &quot;)
+            }
+            Self::InvalidPassword =&gt; {
+                write!(f, &quot;Invalid Password provided&quot;)
             }
             Self::NoAuthorizationHeader =&gt; write!(f, &quot;No Authorization Header&quot;),
             Self::Claims(e) =&gt; write!(f, &quot;Error while Deserializing JWT: {}&quot;, e),
@@ -831,7 +836,7 @@ error message and status codes.</p>
 <span class="boring">}
 </span></code></pre></pre>
 <h3><a class="header" href="#converting-enum-to-httpresponse" id="converting-enum-to-httpresponse">Converting enum to HttpResponse</a></h3>
-<p>Now that we have implmented <code>ResponseError</code> we can create a function to return the error_response created
+<p>Now that we have implmented <code>ResponseError</code> we can create a function to return the <code>error_response</code> created
 above.</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
@@ -845,7 +850,75 @@ above.</p>
 
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#authentication-request-handlers" id="authentication-request-handlers">Authentication Request Handlers</a></h1>
+<h2><a class="header" href="#handling-errors-from-other-parts-of-our-api" id="handling-errors-from-other-parts-of-our-api">Handling errors from other parts of our API</a></h2>
+<p>As we have handled conversion from <code>jwt</code> error to <code>AuthError</code> we can handle further
+conversions for our <code>TodoApiError</code> enum for a fine grained control on our error responses</p>
+<h3><a class="header" href="#conversion-from-autherror" id="conversion-from-autherror">Conversion from AuthError</a></h3>
+<p>Further in the book we will create utility functions to encode and decode tokens, which will return <code>AuthError</code>, rather
+than handle conversion there, we can simply handle them here</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>impl From&lt;AuthError&gt; for TodoApiError {
+    fn from(value: AuthError) -&gt; Self {
+        match value {
+            _ =&gt; TodoApiError::AuthError(value),
+        }
+    }
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<h3><a class="header" href="#conversion-from-r2d2-errors" id="conversion-from-r2d2-errors">Conversion From r2d2 errors</a></h3>
+<p>We are using <code>r2d2</code> for managing our database connections, and as life tells us, <code>No connection is infallible</code>.
+So let's handle that</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span> /// We are not delving deeper into these specific errors, rather returning `DatabaseConnectionError`
+ /// for all the r2d2 errors
+impl From&lt;r2d2::Error&gt; for TodoApiError {
+    fn from(_: r2d2::Error) -&gt; Self {
+        TodoApiError::DatabaseConnectionError
+    }
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<h3><a class="header" href="#conversion-from-diesel-errors" id="conversion-from-diesel-errors">Conversion from diesel errors</a></h3>
+<p><code>diesel</code> can also throw different errors depending on database queries, like <code>ForiegnKeyViolation</code> or <code>UniqueViolation</code>. We
+can handle some here</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>impl From&lt;DBError&gt; for TodoApiError {
+    fn from(error: DBError) -&gt; Self {
+        match error {
+            DBError::DatabaseError(kind, info) =&gt; {
+                if let DatabaseErrorKind::UniqueViolation = kind {
+                    let message: String =
+                        info.details().unwrap_or_else(|| info.message()).to_string();
+
+                    let message = format!(&quot;DatabaseError: {}&quot;, message);
+
+                    return TodoApiError::BadRequest(message);
+                }
+                // On a database error, we don't necessarily need out client to know, it was
+                // an error related to database
+                TodoApiError::InternalServerError
+            }
+            _ =&gt; TodoApiError::InternalServerError,
+        }
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<blockquote>
+<p>This was quite exhaustive handling errors right? Further in the book we will learn what benefits we got by doing this.</p>
+</blockquote>
+<h1><a class="header" href="#authentication-process" id="authentication-process">Authentication Process</a></h1>
 <p>Our server is up and running. So how about we first secure our APIs.</p>
 <h2><a class="header" href="#routerequest-handlers" id="routerequest-handlers">Route/Request Handlers</a></h2>
 <p>In <code>actix_web</code> every <code>route</code> needs to have a <a href="https://actix.rs/actix-web/actix_web/trait.Handler.html"><code>request handler</code></a>, in the
@@ -941,13 +1014,210 @@ mod dtos;
 <h2><a class="header" href="#signup-process" id="signup-process">Signup process</a></h2>
 <p>Here's an easy flowchart explaining what our signup process would look like</p>
 <p><img src="images/signup-dfd.jpg" alt="Signup Process" /></p>
-<p>Few important functionalities, which are not implemented yet are <strong>hashing password</strong> and <strong>creating/encoding a JWT token</strong></p>
+<h2><a class="header" href="#login-process" id="login-process">Login process</a></h2>
+<p>Login process is quite similar to signup and would look like</p>
+<p><img src="images/login-dfd.jpg" alt="Login Process" /></p>
+<p>Few important utility functions, which are not implemented yet are <strong>hashing password</strong>
+and <strong>creating/encoding a JWT token</strong></p>
 <p>You can read more about <a href="https://jwt.io"><code>JWT</code></a>, basically they are encoded strings which contain useful information about a logged
 in user and helps us verify users' identity. Our client needs to store this token on login/sigup and send the token back to server
 on every request containing user specific or sensitive data.</p>
-<h3><a class="header" href="#hashing-password" id="hashing-password">Hashing Password</a></h3>
+<p>Next we will implement these functions, before creating authentication route handlers</p>
+<h1><a class="header" href="#authentication-utility-functions" id="authentication-utility-functions">Authentication Utility functions</a></h1>
+<p>We will be creating some utility functions for authentication, so better create a new file for it.
+<code>src/api/auth_utils.rs</code> and also add it to our api mod file <code>src/api/mod.rs</code></p>
+<h2><a class="header" href="#hashing-password-and-verifying" id="hashing-password-and-verifying">Hashing Password and Verifying</a></h2>
 <p>We hash passwords so that no can read the plain text version or recover the plain text from any encrypted text.</p>
 <p>We'll be using a rust crate <a href="https://docs.rs/rust-argon2/latest/argon2/"><code>argon2</code></a> to do the hashing for us.</p>
+<p><code>argon2</code> requires a <code>secret</code> and <code>salt</code> for hashing, these values are used to make our output hash more secure. <code>Secret</code>
+is not a required argument but its better for security to provide one.</p>
+<p><code>SECRET_KEY</code> should be a <code>byte slice</code> (<code>&amp;[u8]</code>). We can
+easily declare it above our functions as <code>const SECRET_KEY: &amp;'static [u8] = b&quot;onerepublic_secrets&quot;</code> but where's the
+complexity in that. We will load our <code>SECRET_KEY</code> from <code>.env</code> file we created earlier as it should be, we should never
+hard code security specific strings in our code NEVER!!.</p>
+<p>Rust doesn't allow our <code>const</code> values to be dynamic, as these values are needed to be known at compile time. We can create a function where it reads the dotenv file and gets the
+value but instead we will use another crate, <code>[lazy_static</code>](https://docs.rs/lazy_static/latest/lazy_static/). This crate
+provides us with a macro <code>lazy_static!</code> which can evaluate a value a run time and store it in memory.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>lazy_static::lazy_static! {
+    pub static ref SECRET_KEY: String = std::env::var(&quot;SECRET_KEY&quot;).unwrap_or_else(|_| &quot;SUPER_SECRET_KEY&quot;.repeat(8));
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<p>Now for out <code>salt</code>, we can also do the same thing, but as let's take the easier path now. We know the journey.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>const SALT: &amp;'static [u8] = b&quot;supersecuresalt&quot;;
+
+<span class="boring">}
+</span></code></pre></pre>
+<h3><a class="header" href="#hashing" id="hashing">Hashing</a></h3>
+<p>With all that in place we can create our <code>hashing function</code> and this function will output a hash which will be stored in
+the database</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>/// Hash a password, to secure
+pub fn hash_password(password: &amp;str) -&gt; Result&lt;String, TodoApiError&gt; {
+    let config = Config {
+        secret: SECRET_KEY.as_bytes(), // SECRET_KEY is a String, we need to convert it to bytes
+        ..Default::default()
+    };
+
+    argon2::hash_encoded(password.as_bytes(), &amp;SALT, &amp;config).map_err(|err| {
+        dbg!(err);
+        TodoApiError::InternalServerError
+    })
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>map_err</code> function takes a closure and allows us to return a different error if we need. Here we are return <code>InternalServerError</code>
+for any error that occurs while hashing and also printing it using <code>dbg!</code> macro</p>
+<h3><a class="header" href="#verifying-hashes" id="verifying-hashes">Verifying hashes</a></h3>
+<p>When a user logs in, the user will enter the password in plain text and we need to verify that the hash stored in our
+database matches the hash of the provided <strong>plain text password</strong>.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>/// Verify password and hash are equal
+pub fn verify_hash(hash: &amp;str, password: &amp;str) -&gt; Result&lt;bool, TodoApiError&gt; {
+    argon2::verify_encoded_ext(hash, password.as_bytes(), SECRET_KEY.as_bytes(), &amp;[]).map_err(
+        |err| {
+            dbg!(err);
+            TodoApiError::AuthError(crate::api::errors::AuthError::InvalidPassword)
+        },
+    )
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<blockquote>
+<p><code>argon2::verify_encoded_ext</code> functions equates hash against the plain text password. If
+the password doesn't match or there's some other kind of error we will return <code>AuthError::InvalidPassword</code></p>
+</blockquote>
+<h2><a class="header" href="#jwt-tokens" id="jwt-tokens">Jwt Tokens</a></h2>
+<p>We will returning <code>jwt</code> tokens on succesfull <strong>login</strong> or <strong>signup</strong>. These tokens also
+require <code>encoding</code> and <code>decoding</code></p>
+<h3><a class="header" href="#encoding-tokens" id="encoding-tokens">Encoding Tokens</a></h3>
+<p>Before we start encoding and decoding, we need to consider rust's type safety.
+First, we wil require a struct <code>SlimUser</code>, which will passed around our backend, containing,
+only non-sensitive and highly required data. Which in this case are users' <code>id</code> and <code>email</code></p>
+<p>Let's add the following to <code>src/models/user_model.rs</code></p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>pub struct SlimUser {
+    pub email: String,
+    pub id: uuid::Uuid,
+    pub name: String,
+}
+
+// Implenting from to easily convert `User` to `SlimUser`
+impl From&lt;User&gt; for SlimUser {
+    fn from(user: User) -&gt; Self {
+        Self {
+            name: user.name,
+            email: user.email,
+            id: user.id,
+        }
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Next, we will declare a <code>Claims</code> rust, which will represent the encoded <code>jwt</code> data. This
+is the data which will be encoded into a token with some extra data such as <code>expiry time</code></p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>#[derive(Debug, Deserialize, Serialize)]
+pub struct Claims {
+    pub email: String,
+    pub id: String,
+    #[serde(with = &quot;ts_seconds&quot;)] // a chrono attribute, which serializes `DateTime` to timestamps in `seconds`
+    pub exp: DateTime&lt;Utc&gt;, // chrono::DateTime, chrono::offset::Utc
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<blockquote>
+<p>This will allow rust to serialize and deserialize the encoded or decoded token</p>
+</blockquote>
+<p>Now we can go to our main functions</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span>
+<span class="boring">fn main() {
+</span>// use jsonwebtoken::{decode, decode_header, encode, DecodingKey, EncodingKey, Header, Validation};
+
+// Simple secret key
+const JWT_SECRET_KEY: &amp;'static [u8] = b&quot;secure jwt secret&quot;;
+
+pub fn encode_token(user: &amp;SlimUser) -&gt; Result&lt;String, AuthError&gt; {
+    Ok(encode::&lt;Claims&gt;(
+        &amp;Header::new(jsonwebtoken::Algorithm::HS256),
+        &amp;user.into(),
+        &amp;EncodingKey::from_secret(JWT_SECRET_KEY),
+    )?)
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<h3><a class="header" href="#decoding-tokens" id="decoding-tokens">Decoding Tokens</a></h3>
+<p>We have done most of our setup required in previous setup, so decoding tokens will be
+fairly simple.</p>
+<p>For authentication we will provided the encoded token in an http header, using the
+format <code>Bearer {token}</code>. So to ease our process, we will directly provide header
+in this function and extract the token's value</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>// use actix_web::http::header::HeaderValue;
+//  use serde_json::{from_value, Value};
+pub fn decode_token(auth_header: &amp;HeaderValue) -&gt; Result&lt;Claims, AuthError&gt; {
+    match auth_header.to_str() {
+        Ok(auth_header_string) =&gt; {
+            let token = auth_header_string.trim_start_matches(&quot;Bearer &quot;);
+
+            match decode_header(token) {
+                Ok(jwt_header) =&gt; {
+                    match decode::&lt;Value&gt;(
+                        token,
+                        &amp;DecodingKey::from_secret(JWT_SECRET_KEY),
+                        &amp;Validation::new(jwt_header.alg),
+                    ) {
+                        Ok(raw_token) =&gt; {
+                            let decoded = from_value::&lt;Claims&gt;(raw_token.claims.clone());
+
+                            match decoded {
+                                Ok(claims) =&gt; Ok(claims),
+                                Err(e) =&gt; Err(AuthError::Claims(e)),
+                            }
+                        }
+
+                        Err(_) =&gt; Err(AuthError::InvalidToken),
+                    }
+                }
+                Err(e) =&gt; {
+                    dbg!(e);
+                    Err(AuthError::InvalidToken)
+                }
+            }
+        }
+        Err(_) =&gt; Err(AuthError::InvalidAuthorizationHeader),
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 
